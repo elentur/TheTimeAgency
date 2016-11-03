@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using System.Collections;
+using System.Linq;
 using Assets.TheTimeAgency.Scripts;
 
 public class SpreadAdviceState : ICrimeSceneState
@@ -14,6 +15,9 @@ public class SpreadAdviceState : ICrimeSceneState
 
     void ICrimeSceneState.UpdateState()
     {
+
+        crimeScene.markerList.Sort((IComparer) new ClockwiseVector3Comparer());
+
         float AB = Vector3.Distance(((GameObject)crimeScene.markerList[0]).transform.localPosition, ((GameObject)crimeScene.markerList[1]).transform.localPosition);
         float DC = Vector3.Distance(((GameObject)crimeScene.markerList[3]).transform.localPosition, ((GameObject)crimeScene.markerList[2]).transform.localPosition);
 
@@ -44,32 +48,32 @@ public class SpreadAdviceState : ICrimeSceneState
         }
 
 
-        float AC = Vector3.Distance(((GameObject)crimeScene.markerList[0]).transform.localPosition, ((GameObject)crimeScene.markerList[2]).transform.localPosition);
-        float BD = Vector3.Distance(((GameObject)crimeScene.markerList[1]).transform.localPosition, ((GameObject)crimeScene.markerList[3]).transform.localPosition);
+        float AC = Vector3.Distance(((GameObject)crimeScene.markerList[1]).transform.localPosition, ((GameObject)crimeScene.markerList[2]).transform.localPosition);
+        float BD = Vector3.Distance(((GameObject)crimeScene.markerList[0]).transform.localPosition, ((GameObject)crimeScene.markerList[3]).transform.localPosition);
 
         Transform startZ;
         Transform endZ;
 
         if (AC >= BD)
         {
-            startZ = ((GameObject)crimeScene.markerList[0]).transform;
+            startZ = ((GameObject)crimeScene.markerList[1]).transform;
             endZ = ((GameObject)crimeScene.markerList[2]).transform;
 
             if (startZ.position.z > endZ.position.z)
             {
-                endZ = ((GameObject)crimeScene.markerList[0]).transform;
+                endZ = ((GameObject)crimeScene.markerList[1]).transform;
                 startZ = ((GameObject)crimeScene.markerList[2]).transform;
             }
 
         }
         else
         {
-            startZ = ((GameObject)crimeScene.markerList[1]).transform;
+            startZ = ((GameObject)crimeScene.markerList[0]).transform;
             endZ = ((GameObject)crimeScene.markerList[3]).transform;
 
             if (startZ.position.z > endZ.position.z)
             {
-                endZ = ((GameObject)crimeScene.markerList[1]).transform;
+                endZ = ((GameObject)crimeScene.markerList[0]).transform;
                 startZ = ((GameObject)crimeScene.markerList[3]).transform;
             }
         }
@@ -122,9 +126,39 @@ public class SpreadAdviceState : ICrimeSceneState
 
     }
 
+    public class ClockwiseVector3Comparer : IComparer
+    {
+        public int Compare(object obj1, object obj2)
+        {
+            Vector3 v1 = ((GameObject)obj1).transform.localPosition;
+            Vector3 v2 = ((GameObject)obj2).transform.localPosition;
+
+            return Mathf.Atan2(v1.x, v1.z).CompareTo(Mathf.Atan2(v2.x, v2.z));
+        }
+    }
+
     private void ToPingState()
     {
         crimeScene.currentState = crimeScene.pingState;
+    }
+
+    private bool isPointInside(Vector3 target)
+    {
+        var xArray = new float[crimeScene.markerList.Count];
+        var zArray = new float[crimeScene.markerList.Count];
+
+        for (int i = 0; i < crimeScene.markerList.Count; i++)
+        {
+            xArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.x;
+            zArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.z;
+        }
+
+        var maxX = xArray.Max();
+        var minX = xArray.Min();
+        var maxZ = zArray.Max();
+        var minZ = zArray.Min();
+
+        return target.x >= minX && target.x <= maxX && target.z >= minZ && target.z <= maxZ;
     }
 
     public bool IsPointInside(Mesh aMesh, Vector3 pt)
@@ -141,31 +175,13 @@ public class SpreadAdviceState : ICrimeSceneState
             Vector3 V2 = verts[tris[i * 3 + 1]];
             Vector3 V3 = verts[tris[i * 3 + 2]];
 
-            if (this.pointInTri(V1, V2, V3, pt))
+            var P = new Plane(V1,V2,V3);
+
+            if (P.GetSide(pt))
                 inside = true;
         }
         return inside;
     }
-
-    /* Returns true if point p lies inside triangle a-b-c */
-    bool pointInTri(Vector3 a, Vector3 b, Vector3 c, Vector3 p)
-    {
-        Vector3 v0 = b - c;
-        Vector3 v1 = a - c;
-        Vector3 v2 = p - c;
-        float dot00 = Vector3.Dot(v0, v0);
-        float dot01 = Vector3.Dot(v0, v1);
-        float dot02 = Vector3.Dot(v0, v2);
-        float dot11 = Vector3.Dot(v1, v1);
-        float dot12 = Vector3.Dot(v1, v2);
-        float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
-        float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-        float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-
-        return (u > 0.0f) && (v > 0.0f) && (u + v < 1.0f);
-    }
-
-
 
     private Mesh createPlaneMesh()
     {

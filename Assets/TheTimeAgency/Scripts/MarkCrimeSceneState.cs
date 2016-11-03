@@ -14,6 +14,8 @@ public class MarkCrimeSceneState : ICrimeSceneState
     /// </summary>
     private bool m_findingFloor = false;
 
+    private char pointName = 'A';
+
     public MarkCrimeSceneState(CrimeScene crimeScenePattern )
     {
         crimeScene = crimeScenePattern;
@@ -52,6 +54,10 @@ public class MarkCrimeSceneState : ICrimeSceneState
             // copy of the maker
             GameObject myMarker = GameObject.Instantiate<GameObject>(crimeScene.m_marker);
 
+            myMarker.name = pointName.ToString();
+
+            pointName++;
+
             /*
              * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
              * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
@@ -70,6 +76,8 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
     void ICrimeSceneState.OnGUIState()
     {
+
+        setPoints();
         if (crimeScene.markerList.Count >= crimeScene.m_numberMarkers)
         {
             GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), "<size=30>Congratulations!!!!! All makers set!</size>");
@@ -180,8 +188,9 @@ public class MarkCrimeSceneState : ICrimeSceneState
     private void setPoints()
     {
 
+        Debug.Log("setting points");
 
-        for (char i = 'A'; i < 'E'; i++)
+        for (char i = 'A'; i <= 'D'; i++)
         {
             // copy of the maker
             GameObject myMarker = GameObject.Instantiate<GameObject>(crimeScene.m_marker);
