@@ -21,29 +21,29 @@ public class SpreadAdviceState : ICrimeSceneState
         float AB = Vector3.Distance(((GameObject)crimeScene.markerList[0]).transform.localPosition, ((GameObject)crimeScene.markerList[1]).transform.localPosition);
         float DC = Vector3.Distance(((GameObject)crimeScene.markerList[3]).transform.localPosition, ((GameObject)crimeScene.markerList[2]).transform.localPosition);
 
-        Transform startX;
-        Transform endX;
+        Transform startZ;
+        Transform endZ;
 
         if (AB >= DC)
         {
-            startX = ((GameObject)crimeScene.markerList[0]).transform;
-            endX = ((GameObject)crimeScene.markerList[1]).transform;
+            startZ = ((GameObject)crimeScene.markerList[0]).transform;
+            endZ = ((GameObject)crimeScene.markerList[1]).transform;
 
-            if (startX.position.x > endX.position.x)
+            if (startZ.position.z > endZ.position.z)
             {
-                endX = ((GameObject)crimeScene.markerList[0]).transform;
-                startX = ((GameObject)crimeScene.markerList[1]).transform;
+                endZ = ((GameObject)crimeScene.markerList[0]).transform;
+                startZ = ((GameObject)crimeScene.markerList[1]).transform;
             }
         }
         else
         {
-            startX = ((GameObject)crimeScene.markerList[2]).transform;
-            endX = ((GameObject)crimeScene.markerList[3]).transform;
+            startZ = ((GameObject)crimeScene.markerList[2]).transform;
+            endZ = ((GameObject)crimeScene.markerList[3]).transform;
 
-            if (startX.position.x > endX.position.x)
+            if (startZ.position.z > endZ.position.z)
             {
-                endX = ((GameObject)crimeScene.markerList[2]).transform;
-                startX = ((GameObject)crimeScene.markerList[3]).transform;
+                endZ = ((GameObject)crimeScene.markerList[2]).transform;
+                startZ = ((GameObject)crimeScene.markerList[3]).transform;
             }
         }
 
@@ -51,30 +51,30 @@ public class SpreadAdviceState : ICrimeSceneState
         float AC = Vector3.Distance(((GameObject)crimeScene.markerList[1]).transform.localPosition, ((GameObject)crimeScene.markerList[2]).transform.localPosition);
         float BD = Vector3.Distance(((GameObject)crimeScene.markerList[0]).transform.localPosition, ((GameObject)crimeScene.markerList[3]).transform.localPosition);
 
-        Transform startZ;
-        Transform endZ;
+        Transform startX;
+        Transform endX;
 
         if (AC >= BD)
         {
-            startZ = ((GameObject)crimeScene.markerList[1]).transform;
-            endZ = ((GameObject)crimeScene.markerList[2]).transform;
+            startX = ((GameObject)crimeScene.markerList[1]).transform;
+            endX = ((GameObject)crimeScene.markerList[2]).transform;
 
-            if (startZ.position.z > endZ.position.z)
+            if (startX.position.x > endZ.position.x)
             {
-                endZ = ((GameObject)crimeScene.markerList[1]).transform;
-                startZ = ((GameObject)crimeScene.markerList[2]).transform;
+                endX = ((GameObject)crimeScene.markerList[1]).transform;
+                startX = ((GameObject)crimeScene.markerList[2]).transform;
             }
 
         }
         else
         {
-            startZ = ((GameObject)crimeScene.markerList[0]).transform;
-            endZ = ((GameObject)crimeScene.markerList[3]).transform;
+            startX = ((GameObject)crimeScene.markerList[0]).transform;
+            endX = ((GameObject)crimeScene.markerList[3]).transform;
 
-            if (startZ.position.z > endZ.position.z)
+            if (startX.position.x > endX.position.x)
             {
-                endZ = ((GameObject)crimeScene.markerList[0]).transform;
-                startZ = ((GameObject)crimeScene.markerList[3]).transform;
+                endX = ((GameObject)crimeScene.markerList[0]).transform;
+                startX = ((GameObject)crimeScene.markerList[3]).transform;
             }
         }
 
@@ -89,7 +89,7 @@ public class SpreadAdviceState : ICrimeSceneState
             for (float x = startX.localPosition.x; x < endX.localPosition.x; x += steps)
             {
 
-                if (this.IsPointInside(mesh, new Vector3(x, startX.localPosition.y, z)))
+                if (IsPointInside(mesh, new Vector3(x, startX.localPosition.y, z)))
                 {
 
                     GameObject cube = setACube(x + "/" + z);
@@ -177,7 +177,7 @@ public class SpreadAdviceState : ICrimeSceneState
 
             var P = new Plane(V1,V2,V3);
 
-            if (P.GetSide(pt))
+            if (P.GetSide(pt) && !inside)
                 inside = true;
         }
         return inside;
@@ -215,102 +215,6 @@ public class SpreadAdviceState : ICrimeSceneState
         return mesh;
     }
 
-    public float getY(Vector3 point1, Vector3 point2, float x)
-    {
-        var m = (point2.z - point1.z) / (point2.x + point1.x);
-        var b = point1.z - (m * point1.x);
-
-        return m * x + b;
-    }
-
-    private void setEmptyAdvices()
-    {
-
-        if (crimeScene.m_cube.activeSelf != true)
-        {
-            Debug.Log("We will set empty GameObjects");
-
-            Vector3 M = mittelVector(((GameObject)crimeScene.markerList[0]).transform.position, ((GameObject)crimeScene.markerList[1]).transform.position);
-            GameObject myMarkerM = setAMarker("M");
-            myMarkerM.transform.position = M;
-            myMarkerM.GetComponent<Renderer>().material.color = Color.green;
-            Vector3 P = new Vector3(((GameObject)crimeScene.markerList[3]).transform.position.x - M.x, ((GameObject)crimeScene.markerList[3]).transform.position.y, ((GameObject)crimeScene.markerList[3]).transform.position.z - M.z);
-            GameObject myMarkerP = setAMarker("P");
-            myMarkerP.transform.position = P;
-            myMarkerP.GetComponent<Renderer>().material.color = Color.red;
-            Vector3 Q = new Vector3(((GameObject)crimeScene.markerList[2]).transform.position.x + M.x, ((GameObject)crimeScene.markerList[2]).transform.position.y, ((GameObject)crimeScene.markerList[2]).transform.position.z + M.z);
-            GameObject myMarkerQ = setAMarker("Q");
-            myMarkerQ.transform.position = Q;
-            myMarkerQ.GetComponent<Renderer>().material.color = Color.red;
-            Vector3 N = mittelVector(P, Q);
-            GameObject myMarkerN = setAMarker("N");
-            myMarkerN.transform.position = N;
-            myMarkerN.GetComponent<Renderer>().material.color = Color.green;
-
-
-
-
-            crimeScene.m_cube.SetActive(true);
-
-            float AM = Vector3.Distance(((GameObject)crimeScene.markerList[0]).transform.localPosition, myMarkerM.transform.localPosition);
-            float DN = Vector3.Distance(((GameObject)crimeScene.markerList[2]).transform.localPosition, myMarkerN.transform.localPosition);
-
-            Transform largerSide;
-            Transform middlePoint;
-
-            if (AM <= DN)
-            {
-                largerSide = ((GameObject)crimeScene.markerList[0]).transform;
-                middlePoint = myMarkerM.transform;
-            }
-            else
-            {
-                largerSide = ((GameObject)crimeScene.markerList[2]).transform;
-                middlePoint = myMarkerN.transform;
-            }
-
-            crimeScene.m_cube.transform.localPosition = new Vector3(
-                    (myMarkerM.transform.localPosition.x + (myMarkerN.transform.localPosition.x - myMarkerM.transform.localPosition.x)) / 2,
-                    myMarkerM.transform.localPosition.y,
-                    (largerSide.localPosition.z + (myMarkerN.transform.localPosition.z - largerSide.localPosition.z)) / 2
-                );
-
-            Vector3 scale = crimeScene.m_cube.transform.localScale;
-
-            scale.z = Vector3.Distance(myMarkerM.transform.localPosition, myMarkerN.transform.localPosition);
-            scale.x = Vector3.Distance(largerSide.localPosition, middlePoint.localPosition);
-            scale.y = 10;
-
-            crimeScene.m_cube.transform.localScale = scale; // Find the distance between 2 points
-
-            crimeScene.m_cube.transform.LookAt(myMarkerM.transform);
-
-
-
-
-            //A = (1 / 2) |[(x2 - x0)(y3 - y1) + (x3 - x1)(y0 - y2)] |.
-
-
-            float A = 0.5f * Math.Abs((((GameObject)crimeScene.markerList[2]).transform.localPosition.x - ((GameObject)crimeScene.markerList[0]).transform.localPosition.x) * (((GameObject)crimeScene.markerList[3]).transform.localPosition.z - ((GameObject)crimeScene.markerList[1]).transform.localPosition.z)
-                                      + (((GameObject)crimeScene.markerList[3]).transform.localPosition.x - ((GameObject)crimeScene.markerList[1]).transform.localPosition.x) * (((GameObject)crimeScene.markerList[0]).transform.localPosition.z - ((GameObject)crimeScene.markerList[2]).transform.localPosition.z));
-
-            Debug.Log("A" + ((GameObject)crimeScene.markerList[0]).transform.localPosition);
-            Debug.Log("B" + ((GameObject)crimeScene.markerList[1]).transform.localPosition);
-            Debug.Log("C" + ((GameObject)crimeScene.markerList[2]).transform.localPosition);
-            Debug.Log("D" + ((GameObject)crimeScene.markerList[3]).transform.localPosition);
-            Debug.Log("Flächeninhalt: " + A);
-            Debug.Log("M" + myMarkerM.transform.localPosition);
-            Debug.Log("N" + myMarkerN.transform.localPosition);
-            Debug.Log("Mittlere Vector M <-> N " + ((myMarkerM.transform.localPosition + (myMarkerN.transform.localPosition - myMarkerM.transform.localPosition)) / 2));
-            Debug.Log("Cube position" + crimeScene.m_cube.transform.position);
-            Debug.Log("Cube rotation" + crimeScene.m_cube.transform.rotation);
-            Debug.Log("Cube localScale" + crimeScene.m_cube.transform.localScale);
-            Debug.Log("------------------------------------------------");
-
-        }
-
-    }
-
     private GameObject setACube(string name)
     {
         // copy of the maker
@@ -326,29 +230,5 @@ public class SpreadAdviceState : ICrimeSceneState
         myCube.SetActive(true);
 
         return myCube;
-    }
-
-    private GameObject setAMarker(string name)
-    {
-        // copy of the maker
-        GameObject myMarker = GameObject.Instantiate<GameObject>(crimeScene.m_marker);
-
-        myMarker.name = name;
-
-        //http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
-        //Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation.
-        myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
-
-        // Place the marker at the center of the screen at the found floor height.
-        myMarker.SetActive(true);
-
-        return myMarker;
-    }
-
-
-
-    private Vector3 mittelVector(Vector3 ls, Vector3 rs)
-    {
-        return (ls + rs) / 2;
     }
 }
