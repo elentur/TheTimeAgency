@@ -16,9 +16,7 @@ public class SpreadAdviceState : ICrimeSceneState
     void ICrimeSceneState.UpdateState()
     {
 
-        crimeScene.markerList.Sort((IComparer) new ClockwiseVector3Comparer());
-
-
+        //crimeScene.markerList.Sort((IComparer) new ClockwiseVector3Comparer());
 
         var xArray = new float[crimeScene.markerList.Count];
         var zArray = new float[crimeScene.markerList.Count];
@@ -98,79 +96,6 @@ public class SpreadAdviceState : ICrimeSceneState
     private void ToPingState()
     {
         crimeScene.currentState = crimeScene.pingState;
-    }
-
-    private bool isPointInside(Vector3 target)
-    {
-        var xArray = new float[crimeScene.markerList.Count];
-        var zArray = new float[crimeScene.markerList.Count];
-
-        for (int i = 0; i < crimeScene.markerList.Count; i++)
-        {
-            xArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.x;
-            zArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.z;
-        }
-
-        var maxX = xArray.Max();
-        var minX = xArray.Min();
-        var maxZ = zArray.Max();
-        var minZ = zArray.Min();
-
-        return target.x >= minX && target.x <= maxX && target.z >= minZ && target.z <= maxZ;
-    }
-
-    public bool IsPointInside(Mesh aMesh, Vector3 pt)
-    {
-        Vector3[] verts = aMesh.vertices;
-        int[] tris = aMesh.triangles;
-        int triangleCount = tris.Length / 3;
-
-        bool b1, b2, b3, inside = false;
-
-        for (int i = 0; i < triangleCount; i++)
-        {
-            Vector3 V1 = verts[tris[i * 3]];
-            Vector3 V2 = verts[tris[i * 3 + 1]];
-            Vector3 V3 = verts[tris[i * 3 + 2]];
-
-            var P = new Plane(V1,V2,V3);
-
-            if (P.GetSide(pt) && !inside)
-                inside = true;
-        }
-        return inside;
-    }
-
-    private Mesh createPlaneMesh()
-    {
-        Mesh mesh = new Mesh();
-
-        crimeScene.gameObject.AddComponent<MeshRenderer>();
-        crimeScene.gameObject.AddComponent<MeshFilter>().mesh = mesh;
-
-        // TODO kontrollieren ob die Dreiecke in der richtigen reihenfloge gesetz werden!
-
-        Vector3[] vertices = new Vector3[]
-        {
-                 ((GameObject)crimeScene.markerList[0]).transform.localPosition,
-                 ((GameObject)crimeScene.markerList[1]).transform.localPosition,
-                 ((GameObject)crimeScene.markerList[2]).transform.localPosition,
-                 ((GameObject)crimeScene.markerList[3]).transform.localPosition,
-        };
-
-        int[] triangles = new int[]
-        {
-                 0, 1, 2,
-                 0, 2, 3,
-        };
-
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-
-        mesh.RecalculateBounds();
-        mesh.RecalculateNormals();
-
-        return mesh;
     }
 
     private GameObject setACube(string name)

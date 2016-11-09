@@ -60,7 +60,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
             myMarker.transform.position = target;
             // Place the marker at the center of the screen at the found floor height.
 
-            Vector3 position = myMarker.transform.position;
+            Vector3 position = myMarker.transform.localPosition;
 
             bool toClose = vec3ToClose(position);
 
@@ -75,10 +75,11 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
             foreach (Triangle2D triangle in crimeScene.triangleList)
             {
+                Debug.Log(triangle);
+                Debug.Log(position);
+
                 if (triangle.PointInTriangle(position))
                 {
-                    Debug.Log(triangle);
-                    Debug.Log(position);
                     isInside = true;
                 }
             }
