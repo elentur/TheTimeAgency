@@ -79,6 +79,9 @@ public class CrimeScene : MonoBehaviour
     [HideInInspector]
     public ArrayList markerList = new ArrayList();
 
+    [HideInInspector]
+    public ArrayList triangleList = new ArrayList();
+
     public int m_numberMarkers;
     public float m_distanceMarkers;
 

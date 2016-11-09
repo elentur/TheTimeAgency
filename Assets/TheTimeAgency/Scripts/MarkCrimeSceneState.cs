@@ -16,10 +16,18 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
     private char pointName = 'A';
 
-    public MarkCrimeSceneState(CrimeScene crimeScenePattern )
+    public MarkCrimeSceneState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
     }
+
+    private Vector3[] defaultMarker = new[]
+    {
+        new Vector3(1f, -1.300f, 2f),
+        new Vector3(-1.5f, -1.300f, -1f),
+        new Vector3(-2f, -1.300f, 1f),
+        new Vector3(2f, -1.300f, 1f),
+    };
 
     void ICrimeSceneState.UpdateState()
     {
@@ -33,23 +41,8 @@ public class MarkCrimeSceneState : ICrimeSceneState
         {
             Vector3 target = getFloorCoordinate();
 
-            bool toClose = vec3ToClose(target);
-
-            bool isInside = crimeScene.markerList.Count > 2 && isPointInside(target);
-
-            if (toClose)
-            {
-                Debug.Log("The distance to all other makers has to be " + crimeScene.m_distanceMarkers);
-                m_findingFloor = false;
-                return;
-            }
-
-            if (isInside)
-            {
-                Debug.Log("The marker can't be within the crime scine area!");
-                m_findingFloor = false;
-                return;
-            }
+            /*getFloorCoordinate();
+            Vector3 target = defaultMarker[crimeScene.markerList.Count];*/
 
             // copy of the maker
             GameObject myMarker = GameObject.Instantiate<GameObject>(crimeScene.m_marker);
@@ -66,28 +59,78 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
             myMarker.transform.position = target;
             // Place the marker at the center of the screen at the found floor height.
+
+            Vector3 position = myMarker.transform.position;
+
+            bool toClose = vec3ToClose(position);
+
+            bool isInside = false;
+
+            if (toClose)
+            {
+                Debug.LogError("The distance to all other makers has to be " + crimeScene.m_distanceMarkers);
+                m_findingFloor = false;
+                return;
+            }
+
+            foreach (Triangle2D triangle in crimeScene.triangleList)
+            {
+                if (triangle.PointInTriangle(position))
+                {
+                    Debug.Log(triangle);
+                    Debug.Log(position);
+                    isInside = true;
+                }
+            }
+
+            if (isInside)
+            {
+                Debug.LogError("The marker can't be within the crime scine area!");
+                m_findingFloor = false;
+                return;
+            }
+
             myMarker.SetActive(true);
-            AndroidHelper.ShowAndroidToastMessage(string.Format("Floor found. Unity world height = {0}", crimeScene.m_pointCloudFloor.transform.position.y.ToString()));
+            AndroidHelper.ShowAndroidToastMessage(string.Format("Floor found. Unity world height = {0}",
+                crimeScene.m_pointCloudFloor.transform.position.y.ToString()));
 
             crimeScene.markerList.Add(myMarker);
 
+            if (crimeScene.markerList.Count == 3)
+            {
+
+                Triangle2D tri = new Triangle2D(
+                    ((GameObject)crimeScene.markerList[0]).transform.localPosition,
+                    ((GameObject)crimeScene.markerList[1]).transform.localPosition,
+                    ((GameObject)crimeScene.markerList[2]).transform.localPosition
+                );
+
+                crimeScene.triangleList.Add(tri);
+            }
+
+            if (crimeScene.markerList.Count > 3)
+            {
+                Triangle2D tri = (Triangle2D)crimeScene.triangleList[0];
+                crimeScene.triangleList.Add(tri.AdjacentTriangle(((GameObject)crimeScene.markerList[3]).transform.localPosition));
+            }
         }
     }
 
     void ICrimeSceneState.OnGUIState()
     {
 
-        setPoints();
         if (crimeScene.markerList.Count >= crimeScene.m_numberMarkers)
         {
-            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), "<size=30>Congratulations!!!!! All makers set!</size>");
+            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
+                "<size=30>Congratulations!!!!! All makers set!</size>");
             m_findingFloor = false;
             ToSpreadAdviceState();
             return;
         }
         else
         {
-            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), "<size=30>" + crimeScene.markerList.Count + "/" + crimeScene.m_numberMarkers + " makers set!</size>");
+            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
+                "<size=30>" + crimeScene.markerList.Count + "/" + crimeScene.m_numberMarkers + " makers set!</size>");
         }
 
 
@@ -111,7 +154,8 @@ public class MarkCrimeSceneState : ICrimeSceneState
         }
         else
         {
-            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), "<size=30>Searching for floor position. Make sure the floor is visible.</size>");
+            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
+                "<size=30>Searching for floor position. Make sure the floor is visible.</size>");
         }
     }
 
@@ -127,41 +171,24 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
         m_findingFloor = false;
 
-        if (Physics.Raycast(Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2.0f, Screen.height / 2.0f)), out hitInfo))
+        if (Physics.Raycast(Camera.main.ScreenPointToRay(new Vector3(Screen.width/2.0f, Screen.height/2.0f)),
+            out hitInfo))
         {
             // Limit distance of the marker position from the camera to the camera's far clip plane. This makes sure that the marker
             // is visible on screen when the floor is found.
-            Vector3 cameraBase = new Vector3(Camera.main.transform.position.x, hitInfo.point.y, Camera.main.transform.position.z);
-            target = cameraBase + Vector3.ClampMagnitude(hitInfo.point - cameraBase, Camera.main.farClipPlane * 0.9f);
+            Vector3 cameraBase = new Vector3(Camera.main.transform.position.x, hitInfo.point.y,
+                Camera.main.transform.position.z);
+            target = cameraBase + Vector3.ClampMagnitude(hitInfo.point - cameraBase, Camera.main.farClipPlane*0.9f);
         }
         else
         {
             // If no raycast hit, place marker in the camera's forward direction.
             Vector3 dir = new Vector3(Camera.main.transform.forward.x, 0.0f, Camera.main.transform.forward.z);
-            target = dir.normalized * (Camera.main.farClipPlane * 0.9f);
+            target = dir.normalized*(Camera.main.farClipPlane*0.9f);
             target.y = crimeScene.m_pointCloudFloor.transform.position.y;
         }
 
         return target;
-    }
-
-    private bool isPointInside(Vector3 target)
-    {
-        var xArray = new float[crimeScene.markerList.Count];
-        var zArray = new float[crimeScene.markerList.Count];
-
-        for (int i = 0; i < crimeScene.markerList.Count; i++)
-        {
-            xArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.x;
-            zArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.z;
-        }
-
-        var maxX = xArray.Max();
-        var minX = xArray.Min();
-        var maxZ = zArray.Max();
-        var minZ = zArray.Min();
-
-        return target.x >= minX && target.x <= maxX && target.z >= minZ && target.z <= maxZ;
     }
 
     private bool vec3ToClose(Vector3 target)
@@ -184,34 +211,4 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
         return toClose;
     }
-
-    private void setPoints()
-    {
-
-        Debug.Log("setting points");
-
-        for (char i = 'A'; i <= 'D'; i++)
-        {
-            // copy of the maker
-            GameObject myMarker = GameObject.Instantiate<GameObject>(crimeScene.m_marker);
-
-            myMarker.name = i.ToString();
-
-            //http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
-            //Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation.
-            myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
-
-            // Place the marker at the center of the screen at the found floor height.
-            myMarker.SetActive(true);
-
-            crimeScene.markerList.Add(myMarker);
-        }
-
-        ((GameObject)crimeScene.markerList[2]).transform.position = new Vector3(1f, -1.300f, 2f);
-        ((GameObject)crimeScene.markerList[0]).transform.position = new Vector3(-1.5f, -1.300f, -1f);
-        ((GameObject)crimeScene.markerList[3]).transform.position = new Vector3(-3f, -1.300f, 1f);
-        ((GameObject)crimeScene.markerList[1]).transform.position = new Vector3(3f, -1.300f, 1f);
-
-    }
-
 }

@@ -18,88 +18,46 @@ public class SpreadAdviceState : ICrimeSceneState
 
         crimeScene.markerList.Sort((IComparer) new ClockwiseVector3Comparer());
 
-        float AB = Vector3.Distance(((GameObject)crimeScene.markerList[0]).transform.localPosition, ((GameObject)crimeScene.markerList[1]).transform.localPosition);
-        float DC = Vector3.Distance(((GameObject)crimeScene.markerList[3]).transform.localPosition, ((GameObject)crimeScene.markerList[2]).transform.localPosition);
 
-        Transform startZ;
-        Transform endZ;
 
-        if (AB >= DC)
+        var xArray = new float[crimeScene.markerList.Count];
+        var zArray = new float[crimeScene.markerList.Count];
+
+        for (int i = 0; i < crimeScene.markerList.Count; i++)
         {
-            startZ = ((GameObject)crimeScene.markerList[0]).transform;
-            endZ = ((GameObject)crimeScene.markerList[1]).transform;
-
-            if (startZ.position.z > endZ.position.z)
-            {
-                endZ = ((GameObject)crimeScene.markerList[0]).transform;
-                startZ = ((GameObject)crimeScene.markerList[1]).transform;
-            }
-        }
-        else
-        {
-            startZ = ((GameObject)crimeScene.markerList[2]).transform;
-            endZ = ((GameObject)crimeScene.markerList[3]).transform;
-
-            if (startZ.position.z > endZ.position.z)
-            {
-                endZ = ((GameObject)crimeScene.markerList[2]).transform;
-                startZ = ((GameObject)crimeScene.markerList[3]).transform;
-            }
+            xArray[i] = ((GameObject)crimeScene.markerList[i]).transform.localPosition.x;
+            zArray[i] = ((GameObject)crimeScene.markerList[i]).transform.localPosition.z;
         }
 
-
-        float AC = Vector3.Distance(((GameObject)crimeScene.markerList[1]).transform.localPosition, ((GameObject)crimeScene.markerList[2]).transform.localPosition);
-        float BD = Vector3.Distance(((GameObject)crimeScene.markerList[0]).transform.localPosition, ((GameObject)crimeScene.markerList[3]).transform.localPosition);
-
-        Transform startX;
-        Transform endX;
-
-        if (AC >= BD)
-        {
-            startX = ((GameObject)crimeScene.markerList[1]).transform;
-            endX = ((GameObject)crimeScene.markerList[2]).transform;
-
-            if (startX.position.x > endZ.position.x)
-            {
-                endX = ((GameObject)crimeScene.markerList[1]).transform;
-                startX = ((GameObject)crimeScene.markerList[2]).transform;
-            }
-
-        }
-        else
-        {
-            startX = ((GameObject)crimeScene.markerList[0]).transform;
-            endX = ((GameObject)crimeScene.markerList[3]).transform;
-
-            if (startX.position.x > endX.position.x)
-            {
-                endX = ((GameObject)crimeScene.markerList[0]).transform;
-                startX = ((GameObject)crimeScene.markerList[3]).transform;
-            }
-        }
-
-        Mesh mesh = this.createPlaneMesh();
+        var maxX = xArray.Max();
+        var minX = xArray.Min();
+        var maxZ = zArray.Max();
+        var minZ = zArray.Min();
 
         float steps = 10.0f;
 
         ArrayList points = new ArrayList();
 
-        for (float z = startZ.localPosition.z; z < endZ.localPosition.z; z += steps)
+        for (float z = minZ; z < maxZ; z += steps)
         {
-            for (float x = startX.localPosition.x; x < endX.localPosition.x; x += steps)
+            for (float x = minX; x < maxX; x += steps)
             {
 
-                if (IsPointInside(mesh, new Vector3(x, startX.localPosition.y, z)))
+                var p = new Vector3(x, ((GameObject)crimeScene.markerList[0]).transform.localPosition.y, z);
+
+                foreach (Triangle2D triagle in crimeScene.triangleList)
                 {
+                    if (triagle.PointInTriangle(p))
+                    {
+                        GameObject cube = setACube(x + "/" + z);
 
-                    GameObject cube = setACube(x + "/" + z);
+                        cube.transform.localPosition = p;
 
-                    cube.transform.localPosition = new Vector3(x, startX.localPosition.y, z);
+                        cube.transform.localScale = new Vector3(steps - steps/steps, steps - steps/steps,
+                            steps - steps/steps);
 
-                    cube.transform.localScale = new Vector3(steps - steps / steps, steps - steps / steps, steps - steps / steps);
-
-                    points.Add(cube.transform.localPosition);
-
+                        points.Add(cube.transform.localPosition);
+                    }
                 }
             }
         }
@@ -111,10 +69,10 @@ public class SpreadAdviceState : ICrimeSceneState
         Debug.Log(((GameObject)crimeScene.markerList[2]).transform.localPosition);
         Debug.Log(((GameObject)crimeScene.markerList[3]).transform.localPosition);
         Debug.Log("------------founded x line / z line---------------");
-        Debug.Log(startX.localPosition);
-        Debug.Log(endX.localPosition);
-        Debug.Log(startZ.localPosition);
-        Debug.Log(endZ.localPosition);
+        Debug.Log(minX);
+        Debug.Log(maxX);
+        Debug.Log(minZ);
+        Debug.Log(maxZ);
         Debug.Log("Arrays: " + points.Count);
         Debug.Log("---------------------------");
 
