@@ -151,6 +151,9 @@ public class TangoDynamicMesh : MonoBehaviour, ITango3DReconstruction
     /// </summary>
     private Bounds m_bounds;
 
+
+    private GuiTextDebug m_GuiTextDebug;
+
     /// <summary>
     /// Gets the number of queued mesh updates still waiting for processing.
     /// 

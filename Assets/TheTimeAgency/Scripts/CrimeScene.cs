@@ -20,6 +20,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Assets.TheTimeAgency.Scripts;
 using Tango;
 using UnityEngine;
@@ -81,6 +82,14 @@ public class CrimeScene : MonoBehaviour
 
     [HideInInspector]
     public ArrayList triangleList = new ArrayList();
+
+    [HideInInspector]
+    public ArrayList m_pointList = new ArrayList();
+
+    [HideInInspector]
+    public List<GameObject> m_cubeList = new List<GameObject>();
+
+    
 
     public int m_numberMarkers;
     public float m_distanceMarkers;

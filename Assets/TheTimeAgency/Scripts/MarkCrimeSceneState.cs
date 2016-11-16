@@ -75,9 +75,6 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
             foreach (Triangle2D triangle in crimeScene.triangleList)
             {
-                Debug.Log(triangle);
-                Debug.Log(position);
-
                 if (triangle.PointInTriangle(position))
                 {
                     isInside = true;

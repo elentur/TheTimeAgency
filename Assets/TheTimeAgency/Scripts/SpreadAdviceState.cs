@@ -34,13 +34,10 @@ public class SpreadAdviceState : ICrimeSceneState
 
         float steps = 10.0f;
 
-        ArrayList points = new ArrayList();
-
         for (float z = minZ; z < maxZ; z += steps)
         {
             for (float x = minX; x < maxX; x += steps)
             {
-
                 var p = new Vector3(x, ((GameObject)crimeScene.markerList[0]).transform.localPosition.y, z);
 
                 foreach (Triangle2D triagle in crimeScene.triangleList)
@@ -51,28 +48,14 @@ public class SpreadAdviceState : ICrimeSceneState
 
                         cube.transform.localPosition = p;
 
-                        cube.transform.localScale = new Vector3(steps - steps/steps, steps - steps/steps,
-                            steps - steps/steps);
+                        cube.transform.localScale = new Vector3(steps - steps/steps, steps - steps/steps, steps - steps/steps);
 
-                        points.Add(cube.transform.localPosition);
+                        crimeScene.m_pointList.Add(cube.transform.localPosition);
+                        crimeScene.m_cubeList.Add(cube);
                     }
                 }
             }
         }
-
-
-        Debug.Log("------------Points Order---------------");
-        Debug.Log(((GameObject)crimeScene.markerList[0]).transform.localPosition);
-        Debug.Log(((GameObject)crimeScene.markerList[1]).transform.localPosition);
-        Debug.Log(((GameObject)crimeScene.markerList[2]).transform.localPosition);
-        Debug.Log(((GameObject)crimeScene.markerList[3]).transform.localPosition);
-        Debug.Log("------------founded x line / z line---------------");
-        Debug.Log(minX);
-        Debug.Log(maxX);
-        Debug.Log(minZ);
-        Debug.Log(maxZ);
-        Debug.Log("Arrays: " + points.Count);
-        Debug.Log("---------------------------");
 
         ToPingState();
     }
