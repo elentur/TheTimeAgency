@@ -13,6 +13,11 @@ public class SpreadAdviceState : ICrimeSceneState
         crimeScene = crimeScenePattern;
     }
 
+    public void StartState()
+    {
+        throw new NotImplementedException();
+    }
+
     void ICrimeSceneState.UpdateState()
     {
 
@@ -23,8 +28,8 @@ public class SpreadAdviceState : ICrimeSceneState
 
         for (int i = 0; i < crimeScene.markerList.Count; i++)
         {
-            xArray[i] = ((GameObject)crimeScene.markerList[i]).transform.localPosition.x;
-            zArray[i] = ((GameObject)crimeScene.markerList[i]).transform.localPosition.z;
+            xArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.x;
+            zArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.z;
         }
 
         var maxX = xArray.Max();
@@ -32,25 +37,28 @@ public class SpreadAdviceState : ICrimeSceneState
         var maxZ = zArray.Max();
         var minZ = zArray.Min();
 
+        Debug.Log(string.Format("X: {0} - {1}", minX, maxX));
+        Debug.Log(string.Format("Z: {0} - {1}", minZ, maxZ));
+
         float steps = 10.0f;
 
         for (float z = minZ; z < maxZ; z += steps)
         {
             for (float x = minX; x < maxX; x += steps)
             {
-                var p = new Vector3(x, ((GameObject)crimeScene.markerList[0]).transform.localPosition.y, z);
+                var p = new Vector3(x, ((GameObject)crimeScene.markerList[0]).transform.position.y, z);
 
                 foreach (Triangle2D triagle in crimeScene.triangleList)
                 {
                     if (triagle.PointInTriangle(p))
                     {
-                        GameObject cube = setACube(x + "/" + z);
+                        GameObject cube = SetACube(x + "/" + z);
 
-                        cube.transform.localPosition = p;
+                        cube.transform.position = p;
 
                         cube.transform.localScale = new Vector3(steps - steps/steps, steps - steps/steps, steps - steps/steps);
 
-                        crimeScene.m_pointList.Add(cube.transform.localPosition);
+                        crimeScene.m_pointList.Add(cube.transform.position);
                         crimeScene.m_cubeList.Add(cube);
                     }
                 }
@@ -69,8 +77,8 @@ public class SpreadAdviceState : ICrimeSceneState
     {
         public int Compare(object obj1, object obj2)
         {
-            Vector3 v1 = ((GameObject)obj1).transform.localPosition;
-            Vector3 v2 = ((GameObject)obj2).transform.localPosition;
+            Vector3 v1 = ((GameObject)obj1).transform.position;
+            Vector3 v2 = ((GameObject)obj2).transform.position;
 
             return Mathf.Atan2(v1.x, v1.z).CompareTo(Mathf.Atan2(v2.x, v2.z));
         }
@@ -81,7 +89,7 @@ public class SpreadAdviceState : ICrimeSceneState
         crimeScene.currentState = crimeScene.pingState;
     }
 
-    private GameObject setACube(string name)
+    private GameObject SetACube(string name)
     {
         // copy of the maker
         GameObject myCube = GameObject.Instantiate<GameObject>(crimeScene.m_cube);
@@ -91,6 +99,8 @@ public class SpreadAdviceState : ICrimeSceneState
         //http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
         //Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation.
         myCube.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
+
+        myCube.GetComponent<Renderer>().material.color = new Color(1.0f,1.0f,1.0f,0.1f);
 
         // Place the marker at the center of the screen at the found floor height.
         myCube.SetActive(true);

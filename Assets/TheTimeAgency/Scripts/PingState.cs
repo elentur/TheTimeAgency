@@ -6,7 +6,8 @@ using System.Linq;
 using Assets.TheTimeAgency.Scripts;
 using Tango;
 
-public class PingState : ICrimeSceneState {
+public class PingState : ICrimeSceneState
+{
 
     private readonly CrimeScene crimeScene;
 
@@ -35,37 +36,105 @@ public class PingState : ICrimeSceneState {
     [HideInInspector]
     public Vector3[] m_points;
 
-    private List<Vector3> m_pointList;
 
     private bool _fertig = false;
+
+    private bool _setuped = false;
+
+    private List<Vector3> m_pointList;
 
     public PingState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
     }
 
-    public void UpdateState()
+    public void StartState()
     {
-        if (crimeScene.m_cubeList.Count <= 0) return;
+        throw new NotImplementedException();
+    }
 
-        m_points = crimeScene.m_pointCloud.m_points.Distinct(new Comparer()).ToArray();
+    public void SetUp()
+    {
+        var xArray = new float[crimeScene.markerList.Count];
+        var zArray = new float[crimeScene.markerList.Count];
+
+        for (int i = 0; i < crimeScene.markerList.Count; i++)
+        {
+            xArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.x;
+            zArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.z;
+        }
+
+        var maxX = xArray.Max();
+        var minX = xArray.Min();
+        var maxZ = zArray.Max();
+        var minZ = zArray.Min();
+
+        List<Vector3> points = new List<Vector3>();
+
+        foreach (Vector3 point in crimeScene.m_pointCloud.m_points)
+        {
+            if (point.x <= maxX && point.x >= minX && point.z <= maxZ && point.z >= minZ)
+            {
+                points.Add(point);
+            }
+        }
+
+        m_points = points.Distinct(new Comparer()).ToArray();
+
+        foreach (var point in m_points)
+        {
+
+            //            Debug.Log(string.Format("point x {0}, y{1}, z {2}", point.x, point.y, point.z));
+
+            GameObject myMarker = GameObject.Instantiate<GameObject>(crimeScene.m_marker);
+            /*
+             * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
+             * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
+            */
+            myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
+
+            myMarker.transform.position = point;
+
+            myMarker.transform.localScale = new Vector3(1, 1, 1);
+
+            myMarker.GetComponent<Renderer>().material.color = new Color(point.x, point.y, point.z, 1);
+
+            myMarker.SetActive(true);
+        }
+
 
         Debug.Log(string.Format("m_points count {0}", m_points.Length));
 
-        RaycastHit hitInfo;
+        _setuped = true;
+    }
+
+    public void UpdateState()
+    {
+
+        if (_fertig) return;
+
+        //_fertig = true;
+
+        if (crimeScene.m_cubeList.Count <= 0) return;
+
+        if (!_setuped) SetUp();
 
         for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
         {
             GameObject cube = crimeScene.m_cubeList[i];
             Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
 
-
             bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
-          
+
             if (onScreen)
-            { 
-                int it = FindClosestPoint(Camera.main, new Vector2(cube.transform.position.x, cube.transform.position.z), 10);
-                Vector3 target = m_points[it];
+            {
+                var it = FindClosestPoint(Camera.main, new Vector2(cube.transform.position.x, cube.transform.position.z), 10);
+
+                if (it <= -1) continue;
+
+                var target = m_points[it];
+                Debug.Log(string.Format("point x {0}, y {1}, z {2}", target.x, target.y, target.z));
+                Debug.Log(string.Format("cube x {0}, y {1}, z {2}", cube.transform.position.x, cube.transform.position.y, cube.transform.position.z));
                 target.x = cube.transform.position.x;
                 target.z = cube.transform.position.z;
                 cube.transform.position = target;
@@ -101,10 +170,9 @@ public class PingState : ICrimeSceneState {
             Vector3 point = m_points[it];
             if (point.Equals(Vector3.zero)) continue;
             Vector3 screenPos3 = cam.WorldToScreenPoint(point);
-            //Debug.Log(string.Format("screenPos3 x {0}, y {1}, z {2}", screenPos3.x, screenPos3.y, screenPos3.z));
-            Vector2 screenPos = new Vector2(screenPos3.x, screenPos3.y);
+            Vector2 screenPos = new Vector2(screenPos3.x, screenPos3.z);
+            float distSqr = Vector3.SqrMagnitude(screenPos - pos);
 
-            float distSqr = Vector2.SqrMagnitude(screenPos - pos);
             if (distSqr > maxDist * maxDist)
             {
                 continue;

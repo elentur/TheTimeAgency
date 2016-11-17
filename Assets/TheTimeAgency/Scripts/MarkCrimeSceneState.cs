@@ -29,6 +29,11 @@ public class MarkCrimeSceneState : ICrimeSceneState
         new Vector3(2f, -1.300f, 1f),
     };
 
+    public void StartState()
+    {
+        throw new System.NotImplementedException();
+    }
+
     void ICrimeSceneState.UpdateState()
     {
         if (!m_findingFloor)
@@ -60,7 +65,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
             myMarker.transform.position = target;
             // Place the marker at the center of the screen at the found floor height.
 
-            Vector3 position = myMarker.transform.localPosition;
+            Vector3 position = myMarker.transform.position;
 
             bool toClose = vec3ToClose(position);
 
@@ -98,9 +103,9 @@ public class MarkCrimeSceneState : ICrimeSceneState
             {
 
                 Triangle2D tri = new Triangle2D(
-                    ((GameObject)crimeScene.markerList[0]).transform.localPosition,
-                    ((GameObject)crimeScene.markerList[1]).transform.localPosition,
-                    ((GameObject)crimeScene.markerList[2]).transform.localPosition
+                    ((GameObject)crimeScene.markerList[0]).transform.position,
+                    ((GameObject)crimeScene.markerList[1]).transform.position,
+                    ((GameObject)crimeScene.markerList[2]).transform.position
                 );
 
                 crimeScene.triangleList.Add(tri);
@@ -109,7 +114,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
             if (crimeScene.markerList.Count > 3)
             {
                 Triangle2D tri = (Triangle2D)crimeScene.triangleList[0];
-                crimeScene.triangleList.Add(tri.AdjacentTriangle(((GameObject)crimeScene.markerList[3]).transform.localPosition));
+                crimeScene.triangleList.Add(tri.AdjacentTriangle(((GameObject)crimeScene.markerList[3]).transform.position));
             }
         }
     }
@@ -195,12 +200,11 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
         foreach (GameObject marker in crimeScene.markerList)
         {
-            var distance = Vector2.Distance(
-                new Vector2(marker.transform.position.x, marker.transform.position.z),
-                new Vector2(target.x, target.z)
-            );
+            float distSqr = Vector3.SqrMagnitude(
+                new Vector2(marker.transform.position.x, marker.transform.position.z) - new Vector2(target.x, target.z)
+                );
 
-            if (distance < crimeScene.m_distanceMarkers)
+            if (distSqr < crimeScene.m_distanceMarkers * crimeScene.m_distanceMarkers)
             {
                 toClose = true;
                 break;
