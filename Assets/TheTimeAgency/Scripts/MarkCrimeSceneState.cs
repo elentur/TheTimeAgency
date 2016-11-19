@@ -50,7 +50,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
             Vector3 target = defaultMarker[crimeScene.markerList.Count];*/
 
             // copy of the maker
-            GameObject myMarker = GameObject.Instantiate<GameObject>(crimeScene.m_marker);
+            GameObject myMarker = Object.Instantiate(crimeScene.m_marker);
 
             myMarker.name = pointName.ToString();
 
@@ -103,9 +103,9 @@ public class MarkCrimeSceneState : ICrimeSceneState
             {
 
                 Triangle2D tri = new Triangle2D(
-                    ((GameObject)crimeScene.markerList[0]).transform.position,
-                    ((GameObject)crimeScene.markerList[1]).transform.position,
-                    ((GameObject)crimeScene.markerList[2]).transform.position
+                    crimeScene.markerList[0].transform.position,
+                    crimeScene.markerList[1].transform.position,
+                    crimeScene.markerList[2].transform.position
                 );
 
                 crimeScene.triangleList.Add(tri);
@@ -113,8 +113,8 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
             if (crimeScene.markerList.Count > 3)
             {
-                Triangle2D tri = (Triangle2D)crimeScene.triangleList[0];
-                crimeScene.triangleList.Add(tri.AdjacentTriangle(((GameObject)crimeScene.markerList[3]).transform.position));
+                Triangle2D tri = crimeScene.triangleList[0];
+                crimeScene.triangleList.Add(tri.AdjacentTriangle(crimeScene.markerList[3].transform.position));
             }
         }
     }

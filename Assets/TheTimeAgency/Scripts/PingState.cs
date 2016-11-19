@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Assets.TheTimeAgency.Scripts;
 using Tango;
+using Object = UnityEngine.Object;
 
 public class PingState : ICrimeSceneState
 {
@@ -58,10 +59,10 @@ public class PingState : ICrimeSceneState
         var xArray = new float[crimeScene.markerList.Count];
         var zArray = new float[crimeScene.markerList.Count];
 
-        for (int i = 0; i < crimeScene.markerList.Count; i++)
+        for (var i = 0; i < crimeScene.markerList.Count; i++)
         {
-            xArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.x;
-            zArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.z;
+            xArray[i] = crimeScene.markerList[i].transform.position.x;
+            zArray[i] = crimeScene.markerList[i].transform.position.z;
         }
 
         var maxX = xArray.Max();
@@ -73,35 +74,31 @@ public class PingState : ICrimeSceneState
 
         foreach (Vector3 point in crimeScene.m_pointCloud.m_points)
         {
+
             if (point.x <= maxX && point.x >= minX && point.z <= maxZ && point.z >= minZ)
             {
                 points.Add(point);
+
+                GameObject myMarker = Object.Instantiate(crimeScene.m_marker);
+
+                /*
+                 * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
+                 * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
+                */
+                myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
+
+                myMarker.transform.position = point;
+
+                //myMarker.transform.localScale = new Vector3(1, 1, 1);
+
+                myMarker.GetComponent<Renderer>().material.color = new Color(point.x, point.y, point.z, 1);
+
+                myMarker.SetActive(true);
+
             }
         }
 
         m_points = points.Distinct(new Comparer()).ToArray();
-
-        foreach (var point in m_points)
-        {
-
-            //            Debug.Log(string.Format("point x {0}, y{1}, z {2}", point.x, point.y, point.z));
-
-            GameObject myMarker = GameObject.Instantiate<GameObject>(crimeScene.m_marker);
-            /*
-             * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
-             * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
-            */
-            myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
-
-            myMarker.transform.position = point;
-
-            myMarker.transform.localScale = new Vector3(1, 1, 1);
-
-            myMarker.GetComponent<Renderer>().material.color = new Color(point.x, point.y, point.z, 1);
-
-            myMarker.SetActive(true);
-        }
-
 
         Debug.Log(string.Format("m_points count {0}", m_points.Length));
 
@@ -119,7 +116,7 @@ public class PingState : ICrimeSceneState
 
         if (!_setuped) SetUp();
 
-        for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
+        /*for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
         {
             GameObject cube = crimeScene.m_cubeList[i];
             Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
@@ -133,14 +130,12 @@ public class PingState : ICrimeSceneState
                 if (it <= -1) continue;
 
                 var target = m_points[it];
-                Debug.Log(string.Format("point x {0}, y {1}, z {2}", target.x, target.y, target.z));
-                Debug.Log(string.Format("cube x {0}, y {1}, z {2}", cube.transform.position.x, cube.transform.position.y, cube.transform.position.z));
                 target.x = cube.transform.position.x;
                 target.z = cube.transform.position.z;
                 cube.transform.position = target;
                 crimeScene.m_cubeList.Remove(cube);
             }
-        }
+        }*/
     }
 
     public void OnGUIState()

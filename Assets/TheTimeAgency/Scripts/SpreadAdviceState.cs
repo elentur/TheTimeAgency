@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Linq;
 using Assets.TheTimeAgency.Scripts;
+using Object = UnityEngine.Object;
 
 public class SpreadAdviceState : ICrimeSceneState
 {
@@ -28,8 +29,8 @@ public class SpreadAdviceState : ICrimeSceneState
 
         for (int i = 0; i < crimeScene.markerList.Count; i++)
         {
-            xArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.x;
-            zArray[i] = ((GameObject)crimeScene.markerList[i]).transform.position.z;
+            xArray[i] = crimeScene.markerList[i].transform.position.x;
+            zArray[i] = crimeScene.markerList[i].transform.position.z;
         }
 
         var maxX = xArray.Max();
@@ -40,13 +41,13 @@ public class SpreadAdviceState : ICrimeSceneState
         Debug.Log(string.Format("X: {0} - {1}", minX, maxX));
         Debug.Log(string.Format("Z: {0} - {1}", minZ, maxZ));
 
-        float steps = 10.0f;
+        float steps = 0.1f;
 
         for (float z = minZ; z < maxZ; z += steps)
         {
             for (float x = minX; x < maxX; x += steps)
             {
-                var p = new Vector3(x, ((GameObject)crimeScene.markerList[0]).transform.position.y, z);
+                var p = new Vector3(x, crimeScene.markerList[0].transform.position.y, z);
 
                 foreach (Triangle2D triagle in crimeScene.triangleList)
                 {
@@ -56,7 +57,9 @@ public class SpreadAdviceState : ICrimeSceneState
 
                         cube.transform.position = p;
 
-                        cube.transform.localScale = new Vector3(steps - steps/steps, steps - steps/steps, steps - steps/steps);
+                        Vector3 sclale = cube.transform.localScale;
+
+                        cube.transform.localScale = new Vector3(sclale.x - steps/steps, sclale.y - steps/steps, sclale.z - steps/steps);
 
                         crimeScene.m_pointList.Add(cube.transform.position);
                         crimeScene.m_cubeList.Add(cube);
@@ -92,7 +95,7 @@ public class SpreadAdviceState : ICrimeSceneState
     private GameObject SetACube(string name)
     {
         // copy of the maker
-        GameObject myCube = GameObject.Instantiate<GameObject>(crimeScene.m_cube);
+        GameObject myCube = Object.Instantiate<GameObject>(crimeScene.m_cube);
 
         myCube.name = name;
 

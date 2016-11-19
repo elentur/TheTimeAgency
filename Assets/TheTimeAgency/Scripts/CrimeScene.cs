@@ -78,13 +78,13 @@ public class CrimeScene : MonoBehaviour
     public PingState pingState;
 
     [HideInInspector]
-    public ArrayList markerList = new ArrayList();
+    public List<GameObject> markerList = new List<GameObject>();
 
     [HideInInspector]
-    public ArrayList triangleList = new ArrayList();
+    public List<Triangle2D> triangleList = new List<Triangle2D>();
 
     [HideInInspector]
-    public ArrayList m_pointList = new ArrayList();
+    public List<Vector3> m_pointList = new List<Vector3>();
 
     [HideInInspector]
     public List<GameObject> m_cubeList = new List<GameObject>();
