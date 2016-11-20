@@ -77,24 +77,29 @@ public class PingState : ICrimeSceneState
 
             if (point.x <= maxX && point.x >= minX && point.z <= maxZ && point.z >= minZ)
             {
-                points.Add(point);
+                foreach (Triangle2D triagle in crimeScene.triangleList)
+                {
+                    if (triagle.PointInTriangle(point))
+                    {
+                        points.Add(point);
 
-                GameObject myMarker = Object.Instantiate(crimeScene.m_marker);
+                        GameObject myMarker = Object.Instantiate(crimeScene.m_marker);
 
-                /*
-                 * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
-                 * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
-                */
-                myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
+                        /*
+                         * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
+                         * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
+                        */
+                        myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
 
-                myMarker.transform.position = point;
+                        myMarker.transform.position = point;
 
-                //myMarker.transform.localScale = new Vector3(1, 1, 1);
+                        myMarker.transform.localScale = new Vector3(1, 1, 1);
 
-                myMarker.GetComponent<Renderer>().material.color = new Color(point.x, point.y, point.z, 1);
+                        myMarker.GetComponent<Renderer>().material.color = new Color(point.x, point.y, point.z, 1);
 
-                myMarker.SetActive(true);
-
+                        myMarker.SetActive(true);
+                    }
+                }
             }
         }
 
@@ -116,26 +121,32 @@ public class PingState : ICrimeSceneState
 
         if (!_setuped) SetUp();
 
-        /*for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
+        for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
         {
             GameObject cube = crimeScene.m_cubeList[i];
-            Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
+
+            cube.SetActive(false);
+
+            /*Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
 
             bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
 
             if (onScreen)
             {
-                var it = FindClosestPoint(Camera.main, new Vector2(cube.transform.position.x, cube.transform.position.z), 10);
-
+                var it = FindClosestPoint(Camera.main, new Vector2(cube.transform.position.x, cube.transform.position.z), 1);
+                
                 if (it <= -1) continue;
+
+                Debug.Log(string.Format("nearest point {0}", m_points[it]));
+                Debug.Log(string.Format("cube {0}", cube.transform.position));
 
                 var target = m_points[it];
                 target.x = cube.transform.position.x;
                 target.z = cube.transform.position.z;
                 cube.transform.position = target;
                 crimeScene.m_cubeList.Remove(cube);
-            }
-        }*/
+            }*/
+        }
     }
 
     public void OnGUIState()
