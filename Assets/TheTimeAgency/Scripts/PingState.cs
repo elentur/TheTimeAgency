@@ -16,7 +16,7 @@ public class PingState : ICrimeSceneState
     /// The interval in meters between buckets of points. For example, a high sensitivity of 0.01 will group 
     /// points into buckets every 1cm.
     /// </summary>
-    private const float SENSITIVITY = 0.1f;
+    private const float SENSITIVITY = 0.01f;
 
     /// <summary>
     /// The minimum number of points near a world position y to determine that it is not simply noise points.
@@ -56,7 +56,7 @@ public class PingState : ICrimeSceneState
 
     public void SetUp()
     {
-        var xArray = new float[crimeScene.markerList.Count];
+        /*var xArray = new float[crimeScene.markerList.Count];
         var zArray = new float[crimeScene.markerList.Count];
 
         for (var i = 0; i < crimeScene.markerList.Count; i++)
@@ -68,17 +68,20 @@ public class PingState : ICrimeSceneState
         var maxX = xArray.Max();
         var minX = xArray.Min();
         var maxZ = zArray.Max();
-        var minZ = zArray.Min();
+        var minZ = zArray.Min();*/
 
         List<Vector3> points = new List<Vector3>();
+
+        Debug.Log(crimeScene.triangleList[0].ToString());
+        Debug.Log(crimeScene.triangleList[1].ToString());
 
         foreach (Vector3 point in crimeScene.m_pointCloud.m_points)
         {
 
             //if (point.x <= maxX && point.x >= minX && point.z <= maxZ && point.z >= minZ)
             //{
-                //foreach (Triangle2D triagle in crimeScene.triangleList)
-                //{
+            //foreach (Triangle2D triagle in crimeScene.triangleList)
+            //{
                     if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
                     {
                         points.Add(point);
@@ -89,7 +92,7 @@ public class PingState : ICrimeSceneState
                          * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
                          * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
                         */
-                       /* myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
+                        /*myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
 
                         myMarker.transform.position = point;
 
@@ -98,12 +101,14 @@ public class PingState : ICrimeSceneState
                         myMarker.GetComponent<Renderer>().material.color = new Color(point.x, point.y, point.z, 1);
 
                         myMarker.SetActive(true);*/
-                    }
+                   }
                //}
             //}
         }
 
-        m_points = points.Distinct(new Comparer()).ToArray();
+        //m_points = points.Distinct(new Comparer()).ToArray();
+
+        m_points = points.ToArray();
 
         Debug.Log(string.Format("m_points count {0}", m_points.Length));
 
@@ -115,45 +120,67 @@ public class PingState : ICrimeSceneState
 
         if (crimeScene.m_cubeList.Count <= 0) return;
 
-        if (!_setuped) SetUp();
+        //if (!_setuped) SetUp();
 
         if (m_ping)
         {
             m_ping = false;
 
-            foreach (GameObject cube in crimeScene.m_cubeList)
+            SetUp();
+
+            for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
             {
+                GameObject cube = crimeScene.m_cubeList[i];
 
-                Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
+                cube.SetActive(true);
 
-                bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 &&
-                                screenPoint.y < 1;
+                //Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
 
-                if (onScreen)
-                {
+                //bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
+
+                //if (onScreen)
+                //{
+
+                float y = cube.transform.position.y;
+
                     foreach (Vector3 p in m_points)
                     {
-                        cube.SetActive(true);
-
+                        
                         Collider c = cube.GetComponent<Collider>();
 
                         if (c.bounds.Contains(new Vector3(p.x, cube.transform.position.y, p.z)))
                         {
-                            //var target = p;
-                            //target.x = cube.transform.position.x;
-                            //target.z = cube.transform.position.z;
-                            cube.transform.position = p;
-                            Debug.Log(string.Format("cube x {0}, y {1},, z {2}", p.x, p.y, p.z));
-                            
-                            break;
-                        }
-                        else
-                        {
-                            cube.SetActive(false);
+                            if (p.y > y)
+                            {
+                                y = p.y;
+                            }
                             //crimeScene.m_cubeList.Remove(cube);
+             
+               
                         }
+                       
                     }
+
+                var target = cube.transform.position;
+
+
+                if (y > target.y)
+                {
+                    //crimeScene.m_cubeList.Remove(cube);
                 }
+
+                target.y = y;
+
+                cube.transform.position = target;
+
+                //crimeScene.m_cubeList.Remove(cube);
+
+
+                //}
+                //else
+                //{
+                //cube.SetActive(false);
+                //}
             }
 
             /*for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
@@ -191,10 +218,10 @@ public class PingState : ICrimeSceneState
     public void OnGUIState()
     {
         GUI.color = Color.white;
-
+    
         if (!m_ping)
         {
-            if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Ping Crime Scene</size>"))
+            if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Ping</size>"))
             {
                 if (crimeScene.m_pointCloud == null)
                 {

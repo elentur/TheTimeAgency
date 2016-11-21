@@ -7,16 +7,29 @@ namespace Assets.TheTimeAgency.Scripts
     public class Triangle2D
     {
         private readonly Vector3[] _vecArray;
+        private double Area;
 
         public Triangle2D(Vector3 vec1, Vector3 vec2, Vector3 vec3)
         {
             this._vecArray = new[] {vec1, vec2, vec3};
+
+            Vector3 p0 = _vecArray[0];
+            Vector3 p1 = _vecArray[1];
+            Vector3 p2 = _vecArray[2];
+
+            Area = 0.5 * (-p1.z * p2.x + p0.z * (-p1.x + p2.x) + p0.x * (p1.z - p2.z) + p1.x * p2.z);
         }
 
         public Triangle2D(Vector3[] vecArray)
         {
             if (vecArray.Length > 3) throw new ArgumentException("The Array accepts only 3 Vector3.");
             this._vecArray = vecArray;
+
+            Vector3 p0 = _vecArray[0];
+            Vector3 p1 = _vecArray[1];
+            Vector3 p2 = _vecArray[2];
+
+            Area = 0.5 * (-p1.z * p2.x + p0.z * (-p1.x + p2.x) + p0.x * (p1.z - p2.z) + p1.x * p2.z);
         }
 
         private static float Sign(Vector3 v1, Vector3 v2, Vector3 v3)
@@ -37,11 +50,10 @@ namespace Assets.TheTimeAgency.Scripts
 
         public bool PointInTriangle(Vector3 p)
         {
-            Vector3 p0 = _vecArray[0]; 
+            Vector3 p0 = _vecArray[0];
             Vector3 p1 = _vecArray[1];
             Vector3 p2 = _vecArray[2];
 
-            double Area = 0.5 * (-p1.z * p2.x + p0.z * (-p1.x + p2.x) + p0.x * (p1.z - p2.z) + p1.x * p2.z);
             double s = 1.0 / (2.0 * Area) * (p0.z * p2.x - p0.x * p2.z + (p2.z - p0.z) * p.x + (p0.x - p2.x) * p.z);
             double t = 1.0 / (2.0 * Area) * (p0.x * p1.z - p0.z * p1.x + (p0.z - p1.z) * p.x + (p1.x - p0.x) * p.z);
             if (s + t <= 1)
