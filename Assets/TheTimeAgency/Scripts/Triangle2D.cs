@@ -24,7 +24,7 @@ namespace Assets.TheTimeAgency.Scripts
             return (v1.x - v3.x)*(v2.z - v3.z) - (v2.x - v3.x)*(v1.z - v3.z);
         }
 
-        public bool PointInTriangle(Vector3 target)
+        /*public bool PointInTriangle(Vector3 target)
         {
             bool b1, b2, b3;
 
@@ -33,6 +33,22 @@ namespace Assets.TheTimeAgency.Scripts
             b3 = Sign(target, _vecArray[2], _vecArray[0]) < 0.0f;
 
             return (b1 == b2) && (b2 == b3);
+        }*/
+
+        public bool PointInTriangle(Vector3 p)
+        {
+            Vector3 p0 = _vecArray[0]; 
+            Vector3 p1 = _vecArray[1];
+            Vector3 p2 = _vecArray[2];
+
+            double Area = 0.5 * (-p1.z * p2.x + p0.z * (-p1.x + p2.x) + p0.x * (p1.z - p2.z) + p1.x * p2.z);
+            double s = 1.0 / (2.0 * Area) * (p0.z * p2.x - p0.x * p2.z + (p2.z - p0.z) * p.x + (p0.x - p2.x) * p.z);
+            double t = 1.0 / (2.0 * Area) * (p0.x * p1.z - p0.z * p1.x + (p0.z - p1.z) * p.x + (p1.x - p0.x) * p.z);
+            if (s + t <= 1)
+            {
+                return s >= 0 && t >= 0;
+            }
+            return false;
         }
 
         public Triangle2D AdjacentTriangle(Vector3 target)

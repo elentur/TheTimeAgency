@@ -106,7 +106,7 @@ public class SpreadAdviceState : ICrimeSceneState
         myCube.GetComponent<Renderer>().material.color = new Color(1.0f,1.0f,1.0f,0.1f);
 
         // Place the marker at the center of the screen at the found floor height.
-        myCube.SetActive(true);
+        myCube.SetActive(false);
 
         return myCube;
     }

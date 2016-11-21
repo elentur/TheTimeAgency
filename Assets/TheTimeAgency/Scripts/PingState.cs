@@ -38,11 +38,11 @@ public class PingState : ICrimeSceneState
     public Vector3[] m_points;
 
 
-    private bool _fertig = false;
-
     private bool _setuped = false;
 
     private List<Vector3> m_pointList;
+
+    private bool m_ping = false;
 
     public PingState(CrimeScene crimeScenePattern)
     {
@@ -75,21 +75,21 @@ public class PingState : ICrimeSceneState
         foreach (Vector3 point in crimeScene.m_pointCloud.m_points)
         {
 
-            if (point.x <= maxX && point.x >= minX && point.z <= maxZ && point.z >= minZ)
-            {
-                foreach (Triangle2D triagle in crimeScene.triangleList)
-                {
-                    if (triagle.PointInTriangle(point))
+            //if (point.x <= maxX && point.x >= minX && point.z <= maxZ && point.z >= minZ)
+            //{
+                //foreach (Triangle2D triagle in crimeScene.triangleList)
+                //{
+                    if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
                     {
                         points.Add(point);
 
-                        GameObject myMarker = Object.Instantiate(crimeScene.m_marker);
+                        /*GameObject myMarker = Object.Instantiate(crimeScene.m_marker);*/
 
                         /*
                          * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
                          * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
                         */
-                        myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
+                       /* myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
 
                         myMarker.transform.position = point;
 
@@ -97,10 +97,10 @@ public class PingState : ICrimeSceneState
 
                         myMarker.GetComponent<Renderer>().material.color = new Color(point.x, point.y, point.z, 1);
 
-                        myMarker.SetActive(true);
+                        myMarker.SetActive(true);*/
                     }
-                }
-            }
+               //}
+            //}
         }
 
         m_points = points.Distinct(new Comparer()).ToArray();
@@ -113,44 +113,103 @@ public class PingState : ICrimeSceneState
     public void UpdateState()
     {
 
-        if (_fertig) return;
-
-        //_fertig = true;
-
         if (crimeScene.m_cubeList.Count <= 0) return;
 
         if (!_setuped) SetUp();
 
-        for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
+        if (m_ping)
         {
-            GameObject cube = crimeScene.m_cubeList[i];
+            m_ping = false;
 
-            cube.SetActive(false);
-
-            /*Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
-
-            bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
-
-            if (onScreen)
+            foreach (GameObject cube in crimeScene.m_cubeList)
             {
-                var it = FindClosestPoint(Camera.main, new Vector2(cube.transform.position.x, cube.transform.position.z), 1);
-                
-                if (it <= -1) continue;
 
-                Debug.Log(string.Format("nearest point {0}", m_points[it]));
-                Debug.Log(string.Format("cube {0}", cube.transform.position));
+                Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
 
-                var target = m_points[it];
-                target.x = cube.transform.position.x;
-                target.z = cube.transform.position.z;
-                cube.transform.position = target;
-                crimeScene.m_cubeList.Remove(cube);
+                bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 &&
+                                screenPoint.y < 1;
+
+                if (onScreen)
+                {
+                    foreach (Vector3 p in m_points)
+                    {
+                        cube.SetActive(true);
+
+                        Collider c = cube.GetComponent<Collider>();
+
+                        if (c.bounds.Contains(new Vector3(p.x, cube.transform.position.y, p.z)))
+                        {
+                            //var target = p;
+                            //target.x = cube.transform.position.x;
+                            //target.z = cube.transform.position.z;
+                            cube.transform.position = p;
+                            Debug.Log(string.Format("cube x {0}, y {1},, z {2}", p.x, p.y, p.z));
+                            
+                            break;
+                        }
+                        else
+                        {
+                            cube.SetActive(false);
+                            //crimeScene.m_cubeList.Remove(cube);
+                        }
+                    }
+                }
+            }
+
+            /*for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
+            {
+                GameObject cube = crimeScene.m_cubeList[i];
+
+                Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
+
+                bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 &&
+                                screenPoint.y < 1;
+
+                if (onScreen)
+                {
+                    var it = FindClosestPoint(Camera.main,
+                        new Vector2(cube.transform.position.x, cube.transform.position.z), 1);
+
+                    Debug.Log(it);
+
+                    if (it <= -1) continue;
+
+                    Debug.Log(string.Format("nearest point {0}", m_points[it]));
+                    Debug.Log(string.Format("cube {0}", cube.transform.position));
+
+                    var target = m_points[it];
+                    target.x = cube.transform.position.x;
+                    target.z = cube.transform.position.z;
+                    cube.transform.position = target;
+                    //cube.SetActive(true);
+                    crimeScene.m_cubeList.Remove(cube);
+                }
             }*/
         }
     }
 
     public void OnGUIState()
     {
+        GUI.color = Color.white;
+
+        if (!m_ping)
+        {
+            if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Ping Crime Scene</size>"))
+            {
+                if (crimeScene.m_pointCloud == null)
+                {
+                    Debug.LogError("TangoPointCloud required to find floor.");
+                    return;
+                }
+
+                m_ping = true;
+            }
+        }
+        else
+        {
+            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
+                "<size=30>Searching for floor position. Make sure the floor is visible.</size>");
+        }
 
     }
 
