@@ -56,7 +56,7 @@ public class PingState : ICrimeSceneState
 
     public void SetUp()
     {
-        /*var xArray = new float[crimeScene.markerList.Count];
+        var xArray = new float[crimeScene.markerList.Count];
         var zArray = new float[crimeScene.markerList.Count];
 
         for (var i = 0; i < crimeScene.markerList.Count; i++)
@@ -68,7 +68,7 @@ public class PingState : ICrimeSceneState
         var maxX = xArray.Max();
         var minX = xArray.Min();
         var maxZ = zArray.Max();
-        var minZ = zArray.Min();*/
+        var minZ = zArray.Min();
 
         List<Vector3> points = new List<Vector3>();
 
@@ -77,42 +77,18 @@ public class PingState : ICrimeSceneState
 
         foreach (Vector3 point in crimeScene.m_pointCloud.m_points)
         {
-
-            //if (point.x <= maxX && point.x >= minX && point.z <= maxZ && point.z >= minZ)
-            //{
-            //foreach (Triangle2D triagle in crimeScene.triangleList)
-            //{
-                    if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
-                    {
-                        points.Add(point);
-
-                        /*GameObject myMarker = Object.Instantiate(crimeScene.m_marker);*/
-
-                        /*
-                         * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
-                         * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
-                        */
-                        /*myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
-
-                        myMarker.transform.position = point;
-
-                        myMarker.transform.localScale = new Vector3(1, 1, 1);
-
-                        myMarker.GetComponent<Renderer>().material.color = new Color(point.x, point.y, point.z, 1);
-
-                        myMarker.SetActive(true);*/
-                   }
-               //}
-            //}
+            if (point.x <= maxX && point.x >= minX && point.z <= maxZ && point.z >= minZ)
+            {
+                if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
+                {
+                    points.Add(point);    
+                }
+            }
         }
 
         //m_points = points.Distinct(new Comparer()).ToArray();
 
         m_points = points.ToArray();
-
-        Debug.Log(string.Format("m_points count {0}", m_points.Length));
-
-        _setuped = true;
     }
 
     public void UpdateState()
@@ -120,98 +96,51 @@ public class PingState : ICrimeSceneState
 
         if (crimeScene.m_cubeList.Count <= 0) return;
 
-        //if (!_setuped) SetUp();
-
         if (m_ping)
         {
             m_ping = false;
 
             SetUp();
 
-            for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
+
+            Debug.Log(string.Format("crimeScene {0}", crimeScene.m_cubeList.Count));
+            Debug.Log(string.Format("m_points {0}", m_points.Length));
+
+            for (var i = crimeScene.m_cubeList.Count -1; i >= 0; i--)
             {
                 GameObject cube = crimeScene.m_cubeList[i];
-
                 cube.SetActive(true);
-
-                //Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
-
-                //bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
-
-                //if (onScreen)
-                //{
 
                 float y = cube.transform.position.y;
 
-                    foreach (Vector3 p in m_points)
-                    {
-                        
-                        Collider c = cube.GetComponent<Collider>();
+                foreach (Vector3 p in m_points)
+                {    
+                    Collider c = cube.GetComponent<Collider>();
 
-                        if (c.bounds.Contains(new Vector3(p.x, cube.transform.position.y, p.z)))
+                    if (c.bounds.Contains(new Vector3(p.x, cube.transform.position.y, p.z)))
+                    {
+                        if (p.y > y)
                         {
-                            if (p.y > y)
-                            {
-                                y = p.y;
-                            }
-                            //crimeScene.m_cubeList.Remove(cube);
-             
-               
+                            y = p.y;
                         }
-                       
                     }
+                }
 
                 var target = cube.transform.position;
-
-
-                if (y > target.y)
-                {
-                    //crimeScene.m_cubeList.Remove(cube);
-                }
-
+                float cubeY = target.y;
                 target.y = y;
-
                 cube.transform.position = target;
 
-                //crimeScene.m_cubeList.Remove(cube);
+                // do we found a higher y than we can remove the cube from list
+                if (y > cubeY)
+                {
+                    crimeScene.m_cubeList.RemoveAt(i);
+                }
+                
 
-
-                //}
-                //else
-                //{
-                //cube.SetActive(false);
-                //}
             }
 
-            /*for (var i = 0; i < crimeScene.m_cubeList.Count; i++)
-            {
-                GameObject cube = crimeScene.m_cubeList[i];
-
-                Vector3 screenPoint = Camera.main.WorldToViewportPoint(cube.transform.position);
-
-                bool onScreen = screenPoint.z > 0 && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 &&
-                                screenPoint.y < 1;
-
-                if (onScreen)
-                {
-                    var it = FindClosestPoint(Camera.main,
-                        new Vector2(cube.transform.position.x, cube.transform.position.z), 1);
-
-                    Debug.Log(it);
-
-                    if (it <= -1) continue;
-
-                    Debug.Log(string.Format("nearest point {0}", m_points[it]));
-                    Debug.Log(string.Format("cube {0}", cube.transform.position));
-
-                    var target = m_points[it];
-                    target.x = cube.transform.position.x;
-                    target.z = cube.transform.position.z;
-                    cube.transform.position = target;
-                    //cube.SetActive(true);
-                    crimeScene.m_cubeList.Remove(cube);
-                }
-            }*/
+            //crimeScene.m_cubeList.Clear();
         }
     }
 
@@ -238,46 +167,6 @@ public class PingState : ICrimeSceneState
                 "<size=30>Searching for floor position. Make sure the floor is visible.</size>");
         }
 
-    }
-
-    /// @endcond
-    /// <summary>
-    /// Finds the closest point from a point cloud to a position on screen.
-    /// 
-    /// This function is slow, as it looks at every single point in the point
-    /// cloud. Avoid calling this more than once a frame.
-    /// </summary>
-    /// <returns>The index of the closest point, or -1 if not found.</returns>
-    /// <param name="cam">The current camera.</param>
-    /// <param name="pos">Position on screen (in pixels).</param>
-    /// <param name="maxDist">The maximum pixel distance to allow.</param>
-    public int FindClosestPoint(Camera cam, Vector2 pos, int maxDist)
-    {
-        int bestIndex = -1;
-        float bestDistSqr = 0;
-
-        for (int it = 0; it < m_points.Length; ++it)
-        {
-
-            Vector3 point = m_points[it];
-            if (point.Equals(Vector3.zero)) continue;
-            Vector3 screenPos3 = cam.WorldToScreenPoint(point);
-            Vector2 screenPos = new Vector2(screenPos3.x, screenPos3.z);
-            float distSqr = Vector3.SqrMagnitude(screenPos - pos);
-
-            if (distSqr > maxDist * maxDist)
-            {
-                continue;
-            }
-
-            if (bestIndex == -1 || distSqr < bestDistSqr)
-            {
-                bestIndex = it;
-                bestDistSqr = distSqr;
-            }
-        }
-
-        return bestIndex;
     }
 
     public class Comparer : IEqualityComparer<Vector3>
