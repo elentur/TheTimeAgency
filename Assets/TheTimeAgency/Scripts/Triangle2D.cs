@@ -113,5 +113,8 @@ namespace Assets.TheTimeAgency.Scripts
         {
             return "Triangle2D: a:" + _vecArray[0].ToString() + " b:" + _vecArray[1].ToString() + " c:" + _vecArray[2].ToString();
         }
+
+     
+       
     }
 }
