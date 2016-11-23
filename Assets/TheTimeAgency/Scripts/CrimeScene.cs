@@ -114,7 +114,6 @@ public class CrimeScene : MonoBehaviour
         m_cube.SetActive(false);
 
         currentState = markCrimeSceneState;
-
         currentState.StartState();
     }
 

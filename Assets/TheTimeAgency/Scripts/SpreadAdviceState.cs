@@ -9,6 +9,14 @@ public class SpreadAdviceState : ICrimeSceneState
 {
     private readonly CrimeScene crimeScene;
 
+    private Vector3[] defaultMarker = new[]
+    {
+        new Vector3(1f, -1.300f, 2f),
+        new Vector3(-1.5f, -1.300f, -1f),
+        new Vector3(-2f, -1.300f, 1f),
+        new Vector3(2f, -1.300f, 1f),
+    };
+
     public SpreadAdviceState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
@@ -16,7 +24,7 @@ public class SpreadAdviceState : ICrimeSceneState
 
     public void StartState()
     {
-        throw new NotImplementedException();
+        //throw new NotImplementedException();
     }
 
     void ICrimeSceneState.UpdateState()
@@ -89,7 +97,10 @@ public class SpreadAdviceState : ICrimeSceneState
 
     private void ToPingState()
     {
+
         crimeScene.currentState = crimeScene.pingState;
+        crimeScene.currentState.StartState();
+
     }
 
     private GameObject SetACube(string name)

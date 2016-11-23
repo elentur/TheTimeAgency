@@ -16,7 +16,7 @@ public class PingState : ICrimeSceneState
     /// The interval in meters between buckets of points. For example, a high sensitivity of 0.01 will group 
     /// points into buckets every 1cm.
     /// </summary>
-    private const float SENSITIVITY = 0.01f;
+    private const float SENSITIVITY = 0.001f;
 
     /// <summary>
     /// The minimum number of points near a world position y to determine that it is not simply noise points.
@@ -42,6 +42,8 @@ public class PingState : ICrimeSceneState
 
     private List<Vector3> m_pointList;
 
+
+
     private bool m_ping = false;
 
     public PingState(CrimeScene crimeScenePattern)
@@ -51,11 +53,19 @@ public class PingState : ICrimeSceneState
 
     public void StartState()
     {
-        throw new NotImplementedException();
     }
 
+    bool InfiniteCameraCanSeePoint( Vector3 point)
+    {    
+        Vector3 viewportPoint = Camera.main.WorldToViewportPoint(point);
+        return (viewportPoint.z >0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint ) && viewportPoint.z <Camera.main.farClipPlane);
+    }
     public void SetUp()
     {
+        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+
+        // Begin timing.
+        stopwatch.Start();
         var xArray = new float[crimeScene.markerList.Count];
         var zArray = new float[crimeScene.markerList.Count];
 
@@ -71,33 +81,36 @@ public class PingState : ICrimeSceneState
         var minZ = zArray.Min();
 
         List<Vector3> points = new List<Vector3>();
-
-        Debug.Log(crimeScene.triangleList[0].ToString());
-        Debug.Log(crimeScene.triangleList[1].ToString());
-
+       
         foreach (Vector3 point in crimeScene.m_pointCloud.m_points)
         {
             if (point.x <= maxX && point.x >= minX && point.z <= maxZ && point.z >= minZ)
             {
-                if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
+                if (InfiniteCameraCanSeePoint(point))
                 {
-                    points.Add(point);    
+                    if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
+                    {
+                        points.Add(point);
+                    }
                 }
             }
         }
 
-        //m_points = points.Distinct(new Comparer()).ToArray();
+        m_points = points.Distinct(new Comparer()).OrderByDescending(o=>o.y).ToArray();
 
-        m_points = points.ToArray();
+        stopwatch.Stop();
+
+        // Write result.
+        Debug.Log(string.Format("Time elapsed for SetUp: {0}", stopwatch.Elapsed));
     }
 
     public void UpdateState()
     {
 
-        if (crimeScene.m_cubeList.Count <= 0) return;
-
+       
         if (m_ping)
         {
+            if (crimeScene.m_cubeList.Count <= 0) return;
             m_ping = false;
 
             SetUp();
@@ -105,7 +118,10 @@ public class PingState : ICrimeSceneState
 
             Debug.Log(string.Format("crimeScene {0}", crimeScene.m_cubeList.Count));
             Debug.Log(string.Format("m_points {0}", m_points.Length));
+            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
+            // Begin timing.
+            stopwatch.Start();
             for (var i = crimeScene.m_cubeList.Count -1; i >= 0; i--)
             {
                 GameObject cube = crimeScene.m_cubeList[i];
@@ -113,8 +129,12 @@ public class PingState : ICrimeSceneState
 
                 float y = cube.transform.position.y;
 
-                foreach (Vector3 p in m_points)
-                {    
+        
+                //foreach (Vector3 p in m_points)
+                foreach(Vector3 p in m_points)
+                {
+         
+ 
                     Collider c = cube.GetComponent<Collider>();
 
                     if (c.bounds.Contains(new Vector3(p.x, cube.transform.position.y, p.z)))
@@ -122,6 +142,7 @@ public class PingState : ICrimeSceneState
                         if (p.y > y)
                         {
                             y = p.y;
+                            break;
                         }
                     }
                 }
@@ -139,7 +160,10 @@ public class PingState : ICrimeSceneState
                 
 
             }
+            stopwatch.Stop();
 
+            // Write result.
+            Debug.Log(string.Format("Time elapsed for Loop: {0}", stopwatch.Elapsed));
             //crimeScene.m_cubeList.Clear();
         }
     }

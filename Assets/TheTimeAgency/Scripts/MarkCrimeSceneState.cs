@@ -31,7 +31,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
     public void StartState()
     {
-        throw new System.NotImplementedException();
+      //  throw new System.NotImplementedException();
     }
 
     void ICrimeSceneState.UpdateState()
@@ -44,10 +44,10 @@ public class MarkCrimeSceneState : ICrimeSceneState
         // If the point cloud floor has found a new floor, place the marker at the found y position.
         if (crimeScene.m_pointCloudFloor.m_floorFound && crimeScene.m_pointCloud.m_floorFound)
         {
-            Vector3 target = getFloorCoordinate();
+            //Vector3 target = getFloorCoordinate();
 
-            /*getFloorCoordinate();
-            Vector3 target = defaultMarker[crimeScene.markerList.Count];*/
+            //getFloorCoordinate();
+            Vector3 target = defaultMarker[crimeScene.markerList.Count];
 
             // copy of the maker
             GameObject myMarker = Object.Instantiate(crimeScene.m_marker);
@@ -165,6 +165,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
     private void ToSpreadAdviceState()
     {
         crimeScene.currentState = crimeScene.spreadAdviceState;
+        crimeScene.currentState.StartState();
     }
 
     private Vector3 getFloorCoordinate()
