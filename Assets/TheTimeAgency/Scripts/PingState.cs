@@ -66,6 +66,7 @@ public class PingState : ICrimeSceneState
 
         // Begin timing.
         stopwatch.Start();
+
         var xArray = new float[crimeScene.markerList.Count];
         var zArray = new float[crimeScene.markerList.Count];
 
@@ -106,18 +107,17 @@ public class PingState : ICrimeSceneState
 
     public void UpdateState()
     {
-
-       
         if (m_ping)
         {
             if (crimeScene.m_cubeList.Count <= 0) return;
+
             m_ping = false;
 
             SetUp();
 
-
-            Debug.Log(string.Format("crimeScene {0}", crimeScene.m_cubeList.Count));
+            Debug.Log(string.Format("crimeScene cube {0}", crimeScene.m_cubeList.Count));
             Debug.Log(string.Format("m_points {0}", m_points.Length));
+
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
             // Begin timing.
@@ -125,18 +125,14 @@ public class PingState : ICrimeSceneState
             for (var i = crimeScene.m_cubeList.Count -1; i >= 0; i--)
             {
                 GameObject cube = crimeScene.m_cubeList[i];
-                cube.SetActive(true);
 
                 float y = cube.transform.position.y;
 
-        
-                //foreach (Vector3 p in m_points)
-                foreach(Vector3 p in m_points)
-                {
-         
- 
-                    Collider c = cube.GetComponent<Collider>();
+                Collider c = cube.GetComponent<Collider>();
+                cube.SetActive(true);
 
+                foreach (Vector3 p in m_points)
+                {
                     if (c.bounds.Contains(new Vector3(p.x, cube.transform.position.y, p.z)))
                     {
                         if (p.y > y)
@@ -151,14 +147,13 @@ public class PingState : ICrimeSceneState
                 float cubeY = target.y;
                 target.y = y;
                 cube.transform.position = target;
+                
 
                 // do we found a higher y than we can remove the cube from list
                 if (y > cubeY)
                 {
                     crimeScene.m_cubeList.RemoveAt(i);
                 }
-                
-
             }
             stopwatch.Stop();
 
