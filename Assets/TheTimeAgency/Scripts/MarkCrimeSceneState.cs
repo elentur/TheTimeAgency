@@ -24,9 +24,9 @@ public class MarkCrimeSceneState : ICrimeSceneState
     private Vector3[] defaultMarker = new[]
     {
         new Vector3(1f, -1.300f, 2f),
-        new Vector3(-1.5f, -1.300f, -1f),
-        new Vector3(-2f, -1.300f, 1f),
-        new Vector3(2f, -1.300f, 1f),
+        new Vector3(2f, -1.300f, -1f),
+        new Vector3(-1f, -1.300f, -2f),
+        new Vector3(-3f, -1.300f, 3f),
     };
 
     public void StartState()
@@ -44,10 +44,9 @@ public class MarkCrimeSceneState : ICrimeSceneState
         // If the point cloud floor has found a new floor, place the marker at the found y position.
         if (crimeScene.m_pointCloudFloor.m_floorFound && crimeScene.m_pointCloud.m_floorFound)
         {
-            //Vector3 target = getFloorCoordinate();
 
-            //getFloorCoordinate();
-            Vector3 target = defaultMarker[crimeScene.markerList.Count];
+            //Vector3 target = defaultMarker[crimeScene.markerList.Count];
+            Vector3 target = getFloorCoordinate();
 
             // copy of the maker
             GameObject myMarker = Object.Instantiate(crimeScene.m_marker);
