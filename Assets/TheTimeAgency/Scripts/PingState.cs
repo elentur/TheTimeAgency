@@ -37,18 +37,14 @@ public class PingState : ICrimeSceneState
     [HideInInspector]
     public Vector3[] m_points;
 
-
-    private bool _setuped = false;
-
-    private List<Vector3> m_pointList;
-
-
-
     private bool m_ping = false;
+
+    private List<GameObject> _adaptedGameObjects;
 
     public PingState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
+        _adaptedGameObjects = new  List<GameObject>();
     }
 
     public void StartState()
@@ -122,7 +118,7 @@ public class PingState : ICrimeSceneState
 
             // Begin timing.
             stopwatch.Start();
-            for (var i = crimeScene.m_cubeList.Count -1; i >= 0; i--)
+            for (var i = crimeScene.m_cubeList.Count - 1; i >= 0; i--)
             {
                 GameObject cube = crimeScene.m_cubeList[i];
 
@@ -138,6 +134,12 @@ public class PingState : ICrimeSceneState
                         if (p.y > y)
                         {
                             y = p.y;
+
+                            if (!_adaptedGameObjects.Contains(cube))
+                            {
+                                _adaptedGameObjects.Add(cube);
+                            }
+
                             break;
                         }
                     }
@@ -147,20 +149,60 @@ public class PingState : ICrimeSceneState
                 float cubeY = target.y;
                 target.y = y;
                 cube.transform.position = target;
-                
+
 
                 // do we found a higher y than we can remove the cube from list
                 if (y > cubeY)
                 {
                     crimeScene.m_cubeList.RemoveAt(i);
                 }
+
+
             }
             stopwatch.Stop();
 
             // Write result.
             Debug.Log(string.Format("Time elapsed for Loop: {0}", stopwatch.Elapsed));
-            //crimeScene.m_cubeList.Clear();
+
+
+            List<GameObject> placesList = new List<GameObject>();
+
+            foreach (var cube in _adaptedGameObjects)
+            {
+                if (!placesList.Contains(cube))
+                {
+                    List<GameObject> founded = GetGameobjectsInRadius(cube, _adaptedGameObjects, 0.9f);
+
+                    foreach (var target in founded)
+                    {
+                        Debug.Log(string.Format("neighbours: {0}", target.transform.position));
+                    }
+
+                    Debug.Log("------------------------------------------------");
+
+                    placesList.AddRange(founded);
+                }
+            }
+            
+
         }
+    }
+
+    private List<GameObject> GetGameobjectsInRadius(GameObject target, List<GameObject> list, float distance)
+    {
+
+        List<GameObject> neighbours = new List<GameObject>();
+
+        foreach (GameObject cube in list)
+        {
+
+            //Debug.Log(string.Format("distance: {0}", Vector3.Distance(target.transform.position, cube.transform.position)));
+
+            if (Vector3.Distance(target.transform.position, cube.transform.position) < distance)
+                neighbours.Add(cube);
+        }
+
+        return neighbours;
     }
 
     public void OnGUIState()

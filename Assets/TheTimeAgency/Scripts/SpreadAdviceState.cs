@@ -30,8 +30,6 @@ public class SpreadAdviceState : ICrimeSceneState
     void ICrimeSceneState.UpdateState()
     {
 
-        //crimeScene.markerList.Sort((IComparer) new ClockwiseVector3Comparer());
-
         var xArray = new float[crimeScene.markerList.Count];
         var zArray = new float[crimeScene.markerList.Count];
 
@@ -84,23 +82,10 @@ public class SpreadAdviceState : ICrimeSceneState
 
     }
 
-    public class ClockwiseVector3Comparer : IComparer
-    {
-        public int Compare(object obj1, object obj2)
-        {
-            Vector3 v1 = ((GameObject)obj1).transform.position;
-            Vector3 v2 = ((GameObject)obj2).transform.position;
-
-            return Mathf.Atan2(v1.x, v1.z).CompareTo(Mathf.Atan2(v2.x, v2.z));
-        }
-    }
-
     private void ToPingState()
     {
-
         crimeScene.currentState = crimeScene.pingState;
         crimeScene.currentState.StartState();
-
     }
 
     private GameObject SetACube(string name)
@@ -113,10 +98,12 @@ public class SpreadAdviceState : ICrimeSceneState
         //http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
         //Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation.
         myCube.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
-
-        myCube.GetComponent<Renderer>().material.color = new Color(1.0f,1.0f,1.0f,0.1f);
-
         // Place the marker at the center of the screen at the found floor height.
+
+        // adding a Colider for ping state
+        BoxCollider bc = (BoxCollider)myCube.gameObject.AddComponent(typeof(BoxCollider));
+        bc.center = Vector3.zero;
+
         myCube.SetActive(false);
 
         return myCube;
