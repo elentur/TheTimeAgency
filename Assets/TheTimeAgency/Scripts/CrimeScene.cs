@@ -38,6 +38,11 @@ public class CrimeScene : MonoBehaviour
     public GameObject m_marker;
 
     /// <summary>
+    /// The placeholder for the found floor.
+    /// </summary>
+    public GameObject m_AdvicePlaceHolder;
+
+    /// <summary>
     /// The cube for the found floor.
     /// </summary>
     public GameObject m_cube;
@@ -84,15 +89,13 @@ public class CrimeScene : MonoBehaviour
     public List<Triangle2D> triangleList = new List<Triangle2D>();
 
     [HideInInspector]
-    public List<Vector3> m_pointList = new List<Vector3>();
-
-    [HideInInspector]
-    public List<GameObject> m_cubeList = new List<GameObject>();
-
-    
+    public List<GameObject> m_AdvicePlaceHolderList = new List<GameObject>();
 
     public int m_numberMarkers;
+
     public float m_distanceMarkers;
+
+    public int m_numberAdvices = 8;
 
     private void Awake()
     {
@@ -111,6 +114,7 @@ public class CrimeScene : MonoBehaviour
         m_tangoApplication = FindObjectOfType<TangoApplication>();
 
         m_marker.SetActive(false);
+        m_AdvicePlaceHolder.SetActive(false);
         m_cube.SetActive(false);
 
         currentState = markCrimeSceneState;

@@ -6,6 +6,7 @@ using System.Linq;
 using Assets.TheTimeAgency.Scripts;
 using Tango;
 using Object = UnityEngine.Object;
+using Random = System.Random;
 
 public class PingState : ICrimeSceneState
 {
@@ -37,14 +38,19 @@ public class PingState : ICrimeSceneState
     [HideInInspector]
     public Vector3[] m_points;
 
-    private bool m_ping = false;
+    private bool m_ping;
 
-    private List<GameObject> _adaptedGameObjects;
+    private bool m_show;
+
+    private readonly List<GameObject> _advicesList;
+
+    private readonly List<GameObject> _founded;
 
     public PingState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
-        _adaptedGameObjects = new  List<GameObject>();
+        _advicesList = new List<GameObject>();
+        _founded = new List<GameObject>();
     }
 
     public void StartState()
@@ -56,7 +62,8 @@ public class PingState : ICrimeSceneState
         Vector3 viewportPoint = Camera.main.WorldToViewportPoint(point);
         return (viewportPoint.z >0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint ) && viewportPoint.z <Camera.main.farClipPlane);
     }
-    public void SetUp()
+
+    private void FilterPointCloudPoints()
     {
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
@@ -101,91 +108,145 @@ public class PingState : ICrimeSceneState
         Debug.Log(string.Format("Time elapsed for SetUp: {0}", stopwatch.Elapsed));
     }
 
+    private void AdaptAdvicePlaceHolders()
+    {
+        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+
+        // Begin timing.
+        stopwatch.Start();
+
+        for (var i = crimeScene.m_AdvicePlaceHolderList.Count - 1; i >= 0; i--)
+        {
+            GameObject cube = crimeScene.m_AdvicePlaceHolderList[i];
+
+            var script = cube.GetComponent<AdvicePlaceHolder>();
+
+            if (script.Adapted) continue;
+
+            float y = cube.transform.position.y;
+
+            Collider c = cube.GetComponent<Collider>();
+            cube.SetActive(true);
+
+            foreach (Vector3 p in m_points)
+            {
+                if (c.bounds.Contains(new Vector3(p.x, cube.transform.position.y, p.z)))
+                {
+                    script.Adapted = true;
+                    if (!(p.y > y)) continue;
+
+                    y = p.y;
+
+                    script.Heigth = y;
+                    break;
+                }
+            }
+
+            if (!script.Adapted) continue;
+
+            var target = cube.transform.position;
+            target.y = y;
+            cube.transform.position = target;
+
+            if (!_founded.Contains(cube))  _founded.Add(cube);
+            
+        }
+
+        stopwatch.Stop();
+
+        // Write result.
+        Debug.Log(string.Format("Time elapsed for Loop: {0}", stopwatch.Elapsed));
+    }
+
+    public void SetAdvices()
+    {
+
+        // TODO eventuell in SplitList auslagern
+        List<GameObject> filteredList = _founded.Where(x => !x.GetComponent<AdvicePlaceHolder>().Checked).ToList();
+
+        int max = crimeScene.m_AdvicePlaceHolderList.Count / crimeScene.m_numberAdvices;
+
+        List<List<GameObject>> splitted = SplitList(filteredList, max);
+
+        Random rnd = new Random();
+
+        foreach (List<GameObject> list in splitted)
+        {
+
+            foreach (var plchlder in list)
+            {
+                plchlder.GetComponent<AdvicePlaceHolder>().Checked = true;
+            }
+
+            int r = rnd.Next(list.Count);
+
+            GameObject placeholder = list[r];
+
+            GameObject advice = AddCube("advice_" + placeholder.name);
+
+            advice.transform.position = placeholder.transform.position;
+
+            advice.SetActive(true);
+
+            _advicesList.Add(advice);
+        }
+    }
+
     public void UpdateState()
     {
         if (m_ping)
         {
-            if (crimeScene.m_cubeList.Count <= 0) return;
+            if (crimeScene.m_AdvicePlaceHolderList.Count <= 0) return;
 
             m_ping = false;
 
-            SetUp();
+            FilterPointCloudPoints();
 
-            Debug.Log(string.Format("crimeScene cube {0}", crimeScene.m_cubeList.Count));
-            Debug.Log(string.Format("m_points {0}", m_points.Length));
+            AdaptAdvicePlaceHolders();
 
-            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-
-            // Begin timing.
-            stopwatch.Start();
-            for (var i = crimeScene.m_cubeList.Count - 1; i >= 0; i--)
-            {
-                GameObject cube = crimeScene.m_cubeList[i];
-
-                float y = cube.transform.position.y;
-
-                Collider c = cube.GetComponent<Collider>();
-                cube.SetActive(true);
-
-                foreach (Vector3 p in m_points)
-                {
-                    if (c.bounds.Contains(new Vector3(p.x, cube.transform.position.y, p.z)))
-                    {
-                        if (p.y > y)
-                        {
-                            y = p.y;
-
-                            if (!_adaptedGameObjects.Contains(cube))
-                            {
-                                _adaptedGameObjects.Add(cube);
-                            }
-
-                            break;
-                        }
-                    }
-                }
-
-                var target = cube.transform.position;
-                float cubeY = target.y;
-                target.y = y;
-                cube.transform.position = target;
-
-
-                // do we found a higher y than we can remove the cube from list
-                if (y > cubeY)
-                {
-                    crimeScene.m_cubeList.RemoveAt(i);
-                }
-
-
-            }
-            stopwatch.Stop();
-
-            // Write result.
-            Debug.Log(string.Format("Time elapsed for Loop: {0}", stopwatch.Elapsed));
-
-
-            List<GameObject> placesList = new List<GameObject>();
-
-            foreach (var cube in _adaptedGameObjects)
-            {
-                if (!placesList.Contains(cube))
-                {
-                    List<GameObject> founded = GetGameobjectsInRadius(cube, _adaptedGameObjects, 0.9f);
-
-                    foreach (var target in founded)
-                    {
-                        Debug.Log(string.Format("neighbours: {0}", target.transform.position));
-                    }
-
-                    Debug.Log("------------------------------------------------");
-
-                    placesList.AddRange(founded);
-                }
-            }
-            
-
+            SetAdvices();
         }
+
+        if (m_show)
+        {
+            ShowAllInactiveCubes();
+            m_show = false;
+        }
+
+    }
+
+    private void ShowAllInactiveCubes()
+    {
+        foreach (var placeholder in crimeScene.m_AdvicePlaceHolderList)
+        {
+
+            if (!placeholder.GetComponent<AdvicePlaceHolder>().Checked)
+            {
+                GameObject advice = AddCube("placeholder_" + placeholder.name);
+
+                advice.transform.position = placeholder.transform.position;
+
+                advice.GetComponent<Renderer>().material.color = Color.green;
+               
+
+                advice.SetActive(true);
+            }
+        }
+    }
+
+    private static List<List<GameObject>> SplitList(List<GameObject> locations, int nSize = 30)
+    {
+        var list = new List<List<GameObject>>();
+
+        for (int i = 0; i < locations.Count; i += nSize)
+        {
+            if (nSize <= locations.Count - i)
+            {
+                list.Add(locations.GetRange(i, Math.Min(nSize, locations.Count - i)));
+            }
+        }
+
+        return list;
     }
 
     private List<GameObject> GetGameobjectsInRadius(GameObject target, List<GameObject> list, float distance)
@@ -228,6 +289,25 @@ public class PingState : ICrimeSceneState
                 "<size=30>Searching for floor position. Make sure the floor is visible.</size>");
         }
 
+        if (!m_show)
+        {
+            if (GUI.Button(new Rect(Screen.width - 220, Screen.height - 100, 200, 80), "<size=30>Show</size>"))
+            {
+                if (crimeScene.m_pointCloud == null)
+                {
+                    Debug.LogError("TangoPointCloud required to find floor.");
+                    return;
+                }
+
+                m_show = true;
+            }
+        }
+        else
+        {
+            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
+                "<size=30>Searching for floor position. Make sure the floor is visible.</size>");
+        }
+
     }
 
     public class Comparer : IEqualityComparer<Vector3>
@@ -244,5 +324,26 @@ public class PingState : ICrimeSceneState
             int z = Mathf.RoundToInt(vector.z);
             return x * 1000 + z + y * 1000000;
         }
+    }
+
+    private GameObject AddCube(string name)
+    {
+        // copy of the maker
+        GameObject myCube = Object.Instantiate<GameObject>(crimeScene.m_cube);
+
+        myCube.name = name;
+
+        //http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
+        //Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation.
+        myCube.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
+        // Place the marker at the center of the screen at the found floor height.
+
+        // adding a Colider for ping state
+        BoxCollider bc = (BoxCollider)myCube.gameObject.AddComponent(typeof(BoxCollider));
+        bc.center = Vector3.zero;
+
+        myCube.SetActive(false);
+
+        return myCube;
     }
 }

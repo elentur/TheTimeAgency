@@ -9,14 +9,6 @@ public class SpreadAdviceState : ICrimeSceneState
 {
     private readonly CrimeScene crimeScene;
 
-    private Vector3[] defaultMarker = new[]
-    {
-        new Vector3(1f, -1.300f, 2f),
-        new Vector3(-1.5f, -1.300f, -1f),
-        new Vector3(-2f, -1.300f, 1f),
-        new Vector3(2f, -1.300f, 1f),
-    };
-
     public SpreadAdviceState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
@@ -44,9 +36,6 @@ public class SpreadAdviceState : ICrimeSceneState
         var maxZ = zArray.Max();
         var minZ = zArray.Min();
 
-        Debug.Log(string.Format("X: {0} - {1}", minX, maxX));
-        Debug.Log(string.Format("Z: {0} - {1}", minZ, maxZ));
-
         float steps = 0.1f;
 
         for (float z = minZ; z < maxZ; z += steps)
@@ -67,8 +56,7 @@ public class SpreadAdviceState : ICrimeSceneState
 
                         cube.transform.localScale = new Vector3(sclale.x - steps/steps, sclale.y - steps/steps, sclale.z - steps/steps);
 
-                        crimeScene.m_pointList.Add(cube.transform.position);
-                        crimeScene.m_cubeList.Add(cube);
+                        crimeScene.m_AdvicePlaceHolderList.Add(cube);
                     }
                 }
             }
@@ -91,7 +79,7 @@ public class SpreadAdviceState : ICrimeSceneState
     private GameObject SetACube(string name)
     {
         // copy of the maker
-        GameObject myCube = Object.Instantiate<GameObject>(crimeScene.m_cube);
+        GameObject myCube = Object.Instantiate<GameObject>(crimeScene.m_AdvicePlaceHolder);
 
         myCube.name = name;
 
