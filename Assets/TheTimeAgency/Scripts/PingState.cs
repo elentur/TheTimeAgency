@@ -137,20 +137,23 @@ public class PingState : ICrimeSceneState
                 if (c.bounds.Contains(new Vector3(p.x, cube.transform.position.y, p.z)))
                 {
                     script.Adapted = true;
-                    if (!(p.y > y)) continue;
+                    if (y >= p.y) continue;
 
                     y = p.y;
-
-                    script.Heigth = y;
                     break;
                 }
             }
 
-            if (!script.Adapted)
+            
+
+            if (script.Adapted)
             {
+
                 var target = cube.transform.position;
+
                 target.y = y;
                 cube.transform.position = target;
+                script.Heigth = y;
 
                 if (!_founded.Contains(cube)) _founded.Add(cube);
             }
