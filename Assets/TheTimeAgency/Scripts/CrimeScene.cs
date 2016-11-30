@@ -45,7 +45,7 @@ public class CrimeScene : MonoBehaviour
     /// <summary>
     /// The cube for the found floor.
     /// </summary>
-    public GameObject m_cube;
+    public GameObject m_advice;
 
     /// <summary>
     /// The scene's Tango application.
@@ -115,7 +115,7 @@ public class CrimeScene : MonoBehaviour
 
         m_marker.SetActive(false);
         m_AdvicePlaceHolder.SetActive(false);
-        m_cube.SetActive(false);
+        m_advice.SetActive(false);
 
         currentState = markCrimeSceneState;
         currentState.StartState();

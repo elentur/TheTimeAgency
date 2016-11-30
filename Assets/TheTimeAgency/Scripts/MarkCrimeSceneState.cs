@@ -74,6 +74,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
             {
                 Debug.LogError("The distance to all other makers has to be " + crimeScene.m_distanceMarkers);
                 m_findingFloor = false;
+                Object.Destroy (myMarker);
                 return;
             }
 
@@ -89,6 +90,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
             {
                 Debug.LogError("The marker can't be within the crime scine area!");
                 m_findingFloor = false;
+                Object.Destroy(myMarker);
                 return;
             }
 

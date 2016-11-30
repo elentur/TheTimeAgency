@@ -46,11 +46,14 @@ public class PingState : ICrimeSceneState
 
     private readonly List<GameObject> _founded;
 
+    private readonly List<GameObject> _notFounded;
+
     public PingState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
         _advicesList = new List<GameObject>();
         _founded = new List<GameObject>();
+        _notFounded = new List<GameObject>();
     }
 
     public void StartState()
@@ -142,15 +145,17 @@ public class PingState : ICrimeSceneState
                 }
             }
 
-            if (!script.Adapted) continue;
+            if (!script.Adapted)
+            {
+                var target = cube.transform.position;
+                target.y = y;
+                cube.transform.position = target;
 
-            var target = cube.transform.position;
-            target.y = y;
-            cube.transform.position = target;
-
-            if (!_founded.Contains(cube))  _founded.Add(cube);
-            
+                if (!_founded.Contains(cube)) _founded.Add(cube);
+            }
         }
+
+        Debug.Log(string.Format("_notFounded: {0}", _notFounded.Count));
 
         stopwatch.Stop();
 
@@ -217,19 +222,32 @@ public class PingState : ICrimeSceneState
 
     private void ShowAllInactiveCubes()
     {
+
+        // disable all placeholders
+        foreach (var placeholder in _notFounded)
+        {
+            placeholder.SetActive(false);
+        }
+
+        // set all unvisted placeholder active
         foreach (var placeholder in crimeScene.m_AdvicePlaceHolderList)
         {
 
             if (!placeholder.GetComponent<AdvicePlaceHolder>().Checked)
             {
-                GameObject advice = AddCube("placeholder_" + placeholder.name);
 
-                advice.transform.position = placeholder.transform.position;
+                GameObject notFound = _notFounded.Find(x => x.transform.position == placeholder.transform.position);
 
-                advice.GetComponent<Renderer>().material.color = Color.green;
-               
+                GameObject placeholder_ =  (notFound) ? notFound : AddCube("placeholder_" + placeholder.name);
 
-                advice.SetActive(true);
+                placeholder_.transform.position = placeholder.transform.position;
+
+                placeholder_.GetComponent<Renderer>().material.color = Color.green;
+
+                placeholder_.SetActive(true);
+
+                if (!_notFounded.Contains(placeholder_)) _notFounded.Add(placeholder_);
+
             }
         }
     }
@@ -272,42 +290,14 @@ public class PingState : ICrimeSceneState
     
         if (!m_ping)
         {
-            if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Ping</size>"))
-            {
-                if (crimeScene.m_pointCloud == null)
-                {
-                    Debug.LogError("TangoPointCloud required to find floor.");
-                    return;
-                }
-
-                m_ping = true;
-            }
+            if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Ping</size>")) m_ping = true;
         }
-        else
-        {
-            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
-                "<size=30>Searching for floor position. Make sure the floor is visible.</size>");
-        }
+      
+        m_show = GUI.Toggle(new Rect(Screen.width - 220, Screen.height - 100, 200, 80), m_show, "<size=30>Show</size>");
 
-        if (!m_show)
-        {
-            if (GUI.Button(new Rect(Screen.width - 220, Screen.height - 100, 200, 80), "<size=30>Show</size>"))
-            {
-                if (crimeScene.m_pointCloud == null)
-                {
-                    Debug.LogError("TangoPointCloud required to find floor.");
-                    return;
-                }
-
-                m_show = true;
-            }
-        }
-        else
-        {
-            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
-                "<size=30>Searching for floor position. Make sure the floor is visible.</size>");
-        }
-
+       
+        GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
+                "<size=30>" + _advicesList.Count + "/" + crimeScene.m_numberAdvices + " advices founded!</size>");
     }
 
     public class Comparer : IEqualityComparer<Vector3>
@@ -329,7 +319,7 @@ public class PingState : ICrimeSceneState
     private GameObject AddCube(string name)
     {
         // copy of the maker
-        GameObject myCube = Object.Instantiate<GameObject>(crimeScene.m_cube);
+        GameObject myCube = Object.Instantiate<GameObject>(crimeScene.m_advice);
 
         myCube.name = name;
 
