@@ -237,7 +237,7 @@ public class PingState : ICrimeSceneState
 
             if (!placeholder.GetComponent<AdvicePlaceHolder>().Checked)
             {
-
+                // das funktioniert leider nicht so!!!!! :( er findet leider den placeholder nicht
                 GameObject notFound = _notFounded.Find(x => x.transform.position == placeholder.transform.position);
 
                 GameObject placeholder_ =  (notFound) ? notFound : AddCube("placeholder_" + placeholder.name);
