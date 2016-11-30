@@ -54,6 +54,7 @@ public class PingState : ICrimeSceneState
         _advicesList = new List<GameObject>();
         _founded = new List<GameObject>();
         _notFounded = new List<GameObject>();
+        m_points = null;
     }
 
     public void StartState()
@@ -154,8 +155,6 @@ public class PingState : ICrimeSceneState
                 if (!_founded.Contains(cube)) _founded.Add(cube);
             }
         }
-
-        Debug.Log(string.Format("_notFounded: {0}", _notFounded.Count));
 
         stopwatch.Stop();
 
@@ -295,7 +294,17 @@ public class PingState : ICrimeSceneState
       
         m_show = GUI.Toggle(new Rect(Screen.width - 220, Screen.height - 100, 200, 80), m_show, "<size=30>Show</size>");
 
-       
+        if (m_points != null)
+        {
+            GUI.Label(new Rect(0, Screen.height - 100, Screen.width, 50), "<size=30>" + m_points.Length + " points filtered</size>");
+        }
+
+        GUI.Label(new Rect(0, Screen.height - 150, Screen.width, 50), "<size=30>" + _founded.Count + " points checked</size>");
+
+        GUI.Label(new Rect(0, Screen.height - 200, Screen.width, 50), "<size=30>" + crimeScene.m_AdvicePlaceHolderList.Count + " cubes set</size>");
+
+
+
         GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
                 "<size=30>" + _advicesList.Count + "/" + crimeScene.m_numberAdvices + " advices founded!</size>");
     }
