@@ -29,24 +29,13 @@ public class PingState : ICrimeSceneState
     /// </summary>
     private const int RECOGNITION_THRESHOLD = 100;
 
-    /// <summary>
-    /// The points of the point cloud, in world space.
-    /// 
-    /// Note that not every member of this array will be filled out. See
-    /// m_pointsCount.
-    /// </summary>
-    [HideInInspector]
-    public Vector3[] m_points;
+    private bool m_ping,  m_show;
 
-    private bool m_ping;
+    private readonly List<GameObject> _advicesList,_founded, _notFounded;
 
-    private bool m_show;
+    private float _maxX, _minX, _maxZ, _minZ;
 
-    private readonly List<GameObject> _advicesList;
-
-    private readonly List<GameObject> _founded;
-
-    private readonly List<GameObject> _notFounded;
+    private readonly Dictionary<float, List<Vector3>> _pointDic;
 
     public PingState(CrimeScene crimeScenePattern)
     {
@@ -54,26 +43,16 @@ public class PingState : ICrimeSceneState
         _advicesList = new List<GameObject>();
         _founded = new List<GameObject>();
         _notFounded = new List<GameObject>();
-        m_points = null;
+        _pointDic = new Dictionary<float, List<Vector3>>();
     }
 
     public void StartState()
     {
+        SetMaxMin();
     }
 
-    bool InfiniteCameraCanSeePoint( Vector3 point)
-    {    
-        Vector3 viewportPoint = Camera.main.WorldToViewportPoint(point);
-        return (viewportPoint.z >0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint ) && viewportPoint.z <Camera.main.farClipPlane);
-    }
-
-    private void FilterPointCloudPoints()
+    private void SetMaxMin()
     {
-        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-
-        // Begin timing.
-        stopwatch.Start();
-
         var xArray = new float[crimeScene.markerList.Count];
         var zArray = new float[crimeScene.markerList.Count];
 
@@ -83,16 +62,62 @@ public class PingState : ICrimeSceneState
             zArray[i] = crimeScene.markerList[i].transform.position.z;
         }
 
-        var maxX = xArray.Max();
-        var minX = xArray.Min();
-        var maxZ = zArray.Max();
-        var minZ = zArray.Min();
+        _maxX = xArray.Max();
+        _minX = xArray.Min();
+        _maxZ = zArray.Max();
+        _minZ = zArray.Min();
+    }
+
+    private static bool InfiniteCameraCanSeePoint( Vector3 point)
+    {    
+        Vector3 viewportPoint = Camera.main.WorldToViewportPoint(point);
+        return (viewportPoint.z >0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint ) && viewportPoint.z <Camera.main.farClipPlane);
+    }
+
+    private List<GameObject> PlaceholderInCameraView()
+    {
+        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+
+        // Begin timing.
+        stopwatch.Start();
+
+        List<GameObject> placeHolders = new List<GameObject>();
+
+        foreach (GameObject placeholder in crimeScene.m_AdvicePlaceHolderList)
+        {
+
+            var script = placeholder.GetComponent<AdvicePlaceHolder>();
+            // placeholder is already adapted and in the Dictionary
+            if (script.Adapted) continue;
+
+            var point = placeholder.transform.position;
+
+            if (InfiniteCameraCanSeePoint(point))
+            {
+                placeHolders.Add(placeholder);  
+            }
+        }
+
+        stopwatch.Stop();
+
+        // Write result.
+        Debug.Log(string.Format("Time elapsed for PlaceholderInCameraView: {0}", stopwatch.Elapsed));
+
+        return placeHolders;
+    }
+
+    private Vector3[] PointCloudPointsICameraView()
+    {
+        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+
+        // Begin timing.
+        stopwatch.Start();
 
         List<Vector3> points = new List<Vector3>();
        
         foreach (Vector3 point in crimeScene.m_pointCloud.m_points)
         {
-            if (point.x <= maxX && point.x >= minX && point.z <= maxZ && point.z >= minZ)
+            if (point.x <= _maxX && point.x >= _minX && point.z <= _maxZ && point.z >= _minZ)
             {
                 if (InfiniteCameraCanSeePoint(point))
                 {
@@ -104,69 +129,89 @@ public class PingState : ICrimeSceneState
             }
         }
 
-        m_points = points.Distinct(new Comparer()).OrderByDescending(o=>o.y).ToArray();
-
         stopwatch.Stop();
 
         // Write result.
-        Debug.Log(string.Format("Time elapsed for SetUp: {0}", stopwatch.Elapsed));
+        Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed));
+
+        return points.Distinct(new Comparer()).OrderByDescending(o => o.y).ToArray();
     }
 
-    private void AdaptAdvicePlaceHolders()
+    private void AdaptAdvicePlaceHolders(List<GameObject> placeholderList, Vector3[] pointCloudPointList )
     {
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
         // Begin timing.
         stopwatch.Start();
 
-        for (var i = crimeScene.m_AdvicePlaceHolderList.Count - 1; i >= 0; i--)
+        foreach (var placeholder in placeholderList)
         {
-            GameObject cube = crimeScene.m_AdvicePlaceHolderList[i];
 
-            var script = cube.GetComponent<AdvicePlaceHolder>();
+            var script = placeholder.GetComponent<AdvicePlaceHolder>();
 
-            if (script.Adapted) continue;
+            float y = placeholder.transform.position.y;
 
-            float y = cube.transform.position.y;
+            Collider c = placeholder.GetComponent<Collider>();
 
-            Collider c = cube.GetComponent<Collider>();
-            cube.SetActive(true);
+            placeholder.SetActive(true);
 
-            foreach (Vector3 p in m_points)
+            foreach (Vector3 p in pointCloudPointList)
             {
-                if (c.bounds.Contains(new Vector3(p.x, cube.transform.position.y, p.z)))
+                if (c.bounds.Contains(new Vector3(p.x, placeholder.transform.position.y, p.z)))
                 {
                     script.Adapted = true;
                     if (y >= p.y) continue;
-
                     y = p.y;
                     break;
                 }
             }
 
-            
-
             if (script.Adapted)
             {
 
-                var target = cube.transform.position;
+                var target = placeholder.transform.position;
 
                 target.y = y;
-                cube.transform.position = target;
+                placeholder.transform.position = target;
                 script.Heigth = y;
 
-                if (!_founded.Contains(cube)) _founded.Add(cube);
+                if (!_founded.Contains(placeholder)) _founded.Add(placeholder);
+            
+                // Group similar points into buckets based on sensitivity. 
+                float roundedY = Mathf.Round(y / SENSITIVITY) * SENSITIVITY;
+
+                if (!_pointDic.ContainsKey(roundedY))
+                {
+                    _pointDic.Add(roundedY, new List<Vector3>());
+                }
+
+                _pointDic[roundedY].Add(target);
+
             }
+
         }
 
         stopwatch.Stop();
 
         // Write result.
-        Debug.Log(string.Format("Time elapsed for Loop: {0}", stopwatch.Elapsed));
+        Debug.Log(string.Format("Time elapsed for AdaptAdvicePlaceHolders: {0}", stopwatch.Elapsed));
     }
 
     public void SetAdvices()
     {
+
+        /*int max = crimeScene.m_AdvicePlaceHolderList.Count / crimeScene.m_numberAdvices;
+
+        foreach (var pointList in pointDic.Values)
+        {
+            if (pointList.Count > 20)
+            {
+
+            }
+        }*/
+        
+
+
 
         // TODO eventuell in SplitList auslagern
         List<GameObject> filteredList = _founded.Where(x => !x.GetComponent<AdvicePlaceHolder>().Checked).ToList();
@@ -207,9 +252,11 @@ public class PingState : ICrimeSceneState
 
             m_ping = false;
 
-            FilterPointCloudPoints();
+            Vector3[] pointCloudPointList = PointCloudPointsICameraView();
 
-            AdaptAdvicePlaceHolders();
+            List<GameObject> placeHolderList = PlaceholderInCameraView();
+
+            AdaptAdvicePlaceHolders(placeHolderList, pointCloudPointList);
 
             SetAdvices();
         }
@@ -297,19 +344,7 @@ public class PingState : ICrimeSceneState
       
         m_show = GUI.Toggle(new Rect(Screen.width - 220, Screen.height - 100, 200, 80), m_show, "<size=30>Show</size>");
 
-        if (m_points != null)
-        {
-            GUI.Label(new Rect(0, Screen.height - 100, Screen.width, 50), "<size=30>" + m_points.Length + " points filtered</size>");
-        }
-
-        GUI.Label(new Rect(0, Screen.height - 150, Screen.width, 50), "<size=30>" + _founded.Count + " points checked</size>");
-
-        GUI.Label(new Rect(0, Screen.height - 200, Screen.width, 50), "<size=30>" + crimeScene.m_AdvicePlaceHolderList.Count + " cubes set</size>");
-
-
-
-        GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
-                "<size=30>" + _advicesList.Count + "/" + crimeScene.m_numberAdvices + " advices founded!</size>");
+        GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), string.Format("<size=30> {0} / {1} Aadvices added!</size>", _advicesList.Count, crimeScene.m_numberAdvices));
     }
 
     public class Comparer : IEqualityComparer<Vector3>

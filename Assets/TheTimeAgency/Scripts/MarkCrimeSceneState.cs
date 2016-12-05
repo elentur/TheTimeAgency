@@ -128,6 +128,8 @@ public class MarkCrimeSceneState : ICrimeSceneState
             GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
                 "<size=30>Congratulations!!!!! All makers set!</size>");
             m_findingFloor = false;
+            // reset of the camera to leave out of the findFloor modus
+            crimeScene.m_tangoApplication.SetDepthCameraRate(TangoEnums.TangoDepthCameraRate.MAXIMUM);
             ToSpreadAdviceState();
             return;
         }
