@@ -35,7 +35,7 @@ public class PingState : ICrimeSceneState
 
     private float _maxX, _minX, _maxZ, _minZ;
 
-    private readonly Dictionary<float, List<Vector3>> _pointDic;
+    private readonly SortedDictionary<float, List<Vector3>> _pointDic;
 
     public PingState(CrimeScene crimeScenePattern)
     {
@@ -43,7 +43,7 @@ public class PingState : ICrimeSceneState
         _advicesList = new List<GameObject>();
         _founded = new List<GameObject>();
         _notFounded = new List<GameObject>();
-        _pointDic = new Dictionary<float, List<Vector3>>();
+        _pointDic = new SortedDictionary<float, List<Vector3>>();
     }
 
     public void StartState()
@@ -124,17 +124,27 @@ public class PingState : ICrimeSceneState
                     if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
                     {
                         points.Add(point);
+                        // Group similar points into buckets based on sensitivity. 
+                        float roundedY = Mathf.Round(point.y / SENSITIVITY) * SENSITIVITY;
+
+                        if (!_pointDic.ContainsKey(roundedY))
+                        {
+                            _pointDic.Add(roundedY, new List<Vector3>());
+                        }
+
+                        _pointDic[roundedY].Add(point);
+
                     }
                 }
             }
         }
-
+       
         stopwatch.Stop();
 
         // Write result.
         Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed));
 
-        return points.Distinct(new Comparer()).OrderByDescending(o => o.y).ToArray();
+        return points.ToArray();
     }
 
     private void AdaptAdvicePlaceHolders(List<GameObject> placeholderList, Vector3[] pointCloudPointList )
@@ -176,17 +186,6 @@ public class PingState : ICrimeSceneState
                 script.Heigth = y;
 
                 if (!_founded.Contains(placeholder)) _founded.Add(placeholder);
-            
-                // Group similar points into buckets based on sensitivity. 
-                float roundedY = Mathf.Round(y / SENSITIVITY) * SENSITIVITY;
-
-                if (!_pointDic.ContainsKey(roundedY))
-                {
-                    _pointDic.Add(roundedY, new List<Vector3>());
-                }
-
-                _pointDic[roundedY].Add(target);
-
             }
 
         }
@@ -199,19 +198,6 @@ public class PingState : ICrimeSceneState
 
     public void SetAdvices()
     {
-
-        /*int max = crimeScene.m_AdvicePlaceHolderList.Count / crimeScene.m_numberAdvices;
-
-        foreach (var pointList in pointDic.Values)
-        {
-            if (pointList.Count > 20)
-            {
-
-            }
-        }*/
-        
-
-
 
         // TODO eventuell in SplitList auslagern
         List<GameObject> filteredList = _founded.Where(x => !x.GetComponent<AdvicePlaceHolder>().Checked).ToList();
@@ -254,11 +240,56 @@ public class PingState : ICrimeSceneState
 
             Vector3[] pointCloudPointList = PointCloudPointsICameraView();
 
-            List<GameObject> placeHolderList = PlaceholderInCameraView();
+            Debug.Log(string.Format("dic: {0}",_pointDic.Count));
 
-            AdaptAdvicePlaceHolders(placeHolderList, pointCloudPointList);
+            foreach (var pointList in _pointDic.Values)
+            {
 
-            SetAdvices();
+                if (pointList.Count > 10)
+                {
+
+                    Vector3 sum = Vector3.zero;
+
+                    foreach (var point in pointList)
+                    {
+                        sum += point;
+                    }
+
+                    Vector3 average = sum/pointList.Count;
+
+                    bool outOfReach = true;
+
+                    foreach (var advice in _advicesList)
+                    {
+                        float dist = Vector3.Distance(advice.transform.position, average);
+
+                        if (dist < 0.5f)
+                        {
+                            outOfReach = false;
+                        }
+                    }
+
+                    if(outOfReach)
+                    {
+                   
+                        GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z);
+
+                        advice.transform.position = average;
+
+                        advice.SetActive(true);
+
+                        _advicesList.Add(advice);
+                    }
+
+
+                }
+            }
+
+            //List<GameObject> placeHolderList = PlaceholderInCameraView();
+
+            //AdaptAdvicePlaceHolders(placeHolderList, pointCloudPointList);
+
+            //SetAdvices();
         }
 
         if (m_show)
