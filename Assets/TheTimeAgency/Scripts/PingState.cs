@@ -1,10 +1,10 @@
 ﻿using System;
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.TheTimeAgency.Scripts;
-using Tango;
+using Assets.TheTimeAgency.Scripts.KDTree;
+using Assets.TheTimeAgency.Scripts.Trees;
 using Object = UnityEngine.Object;
 using Random = System.Random;
 
@@ -37,6 +37,10 @@ public class PingState : ICrimeSceneState
 
     private readonly SortedDictionary<float, List<Vector3>> _pointDic;
 
+    private KNN _targetKnn;
+
+    private KDTree<Vector3> pTree;
+
     public PingState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
@@ -44,6 +48,10 @@ public class PingState : ICrimeSceneState
         _founded = new List<GameObject>();
         _notFounded = new List<GameObject>();
         _pointDic = new SortedDictionary<float, List<Vector3>>();
+
+        _targetKnn = new KNN();
+
+        pTree = new KDTree<Vector3>(3);
     }
 
     public void StartState()
@@ -123,6 +131,21 @@ public class PingState : ICrimeSceneState
                 {
                     if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
                     {
+
+                        /*for (float i = _minZ; i < _maxZ; i += 0.5f)
+                        {
+                            for (float j = _minX; j < _maxX; j += 0.5f)
+                            {
+
+                                Debug.Log(string.Format("{0}/{1}",i,j));
+
+                            }
+                        }*/
+
+
+                        //pTree.AddPoint(new double[] { x, y }, new EllipseWrapper(x, y));
+                        pTree.AddPoint(new double[] { point.x, point.y, point.z }, point);
+
                         points.Add(point);
                         // Group similar points into buckets based on sensitivity. 
                         float roundedY = Mathf.Round(point.y / SENSITIVITY) * SENSITIVITY;
@@ -144,7 +167,51 @@ public class PingState : ICrimeSceneState
         // Write result.
         Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed));
 
-        return points.ToArray();
+        var mPoints = points.ToArray();
+
+        var pIter = pTree.NearestNeighbors(new double[] { mPoints[0].x, mPoints[0].y, mPoints[0].z }, 5, 0.9f);
+
+        while (pIter.MoveNext())
+        {
+            // Get the ellipse.
+            var point = pIter.Current;
+
+            Debug.Log(string.Format("p: {0}", point));
+
+            GameObject advice = AddCube("advice_" + point.x + "/" + point.y + "/" + point.z);
+
+            advice.transform.position = point;
+
+            advice.SetActive(true);
+
+            _advicesList.Add(advice);
+
+        }
+
+
+       /* _targetKnn.build(mPoints, Enumerable.Range(0, points.Count).ToArray());
+
+        var targetIndices = _targetKnn.knearest(mPoints[0], 50);
+
+        for (var i = 0; i < targetIndices.Length; i++)
+        {
+            Debug.Log(string.Format("targetIndices {0}: {1}",i, targetIndices[i]));
+            Debug.Log(string.Format("mPoints {0}: {1}", i, mPoints[i]));
+
+
+
+            GameObject advice = AddCube("advice_" + mPoints[i].x + "/" + mPoints[i].y + "/" + mPoints[i].z);
+
+            advice.transform.position = mPoints[i];
+
+            advice.SetActive(true);
+
+            _advicesList.Add(advice);
+
+
+        }*/
+
+        return mPoints;
     }
 
     private void AdaptAdvicePlaceHolders(List<GameObject> placeholderList, Vector3[] pointCloudPointList )
