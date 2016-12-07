@@ -6,7 +6,7 @@ using Assets.TheTimeAgency.Scripts;
 using Assets.TheTimeAgency.Scripts.KDTree;
 using Assets.TheTimeAgency.Scripts.Trees;
 using Object = UnityEngine.Object;
-using Random = System.Random;
+using Random = UnityEngine.Random;
 
 public class PingState : ICrimeSceneState
 {
@@ -17,7 +17,7 @@ public class PingState : ICrimeSceneState
     /// The interval in meters between buckets of points. For example, a high sensitivity of 0.01 will group 
     /// points into buckets every 1cm.
     /// </summary>
-    private const float SENSITIVITY = 0.001f;
+    private const float SENSITIVITY = 0.002f;
 
     /// <summary>
     /// The minimum number of points near a world position y to determine that it is not simply noise points.
@@ -29,9 +29,9 @@ public class PingState : ICrimeSceneState
     /// </summary>
     private const int RECOGNITION_THRESHOLD = 100;
 
-    private bool m_ping,  m_show;
+    private bool m_ping, m_show;
 
-    private readonly List<GameObject> _advicesList,_founded, _notFounded;
+    private readonly List<GameObject> _advicesList, _founded, _notFounded;
 
     private float _maxX, _minX, _maxZ, _minZ;
 
@@ -76,10 +76,10 @@ public class PingState : ICrimeSceneState
         _minZ = zArray.Min();
     }
 
-    private static bool InfiniteCameraCanSeePoint( Vector3 point)
-    {    
+    private static bool InfiniteCameraCanSeePoint(Vector3 point)
+    {
         Vector3 viewportPoint = Camera.main.WorldToViewportPoint(point);
-        return (viewportPoint.z >0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint ) && viewportPoint.z <Camera.main.farClipPlane);
+        return (viewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint) && viewportPoint.z < Camera.main.farClipPlane);
     }
 
     private List<GameObject> PlaceholderInCameraView()
@@ -102,7 +102,7 @@ public class PingState : ICrimeSceneState
 
             if (InfiniteCameraCanSeePoint(point))
             {
-                placeHolders.Add(placeholder);  
+                placeHolders.Add(placeholder);
             }
         }
 
@@ -122,7 +122,7 @@ public class PingState : ICrimeSceneState
         stopwatch.Start();
 
         List<Vector3> points = new List<Vector3>();
-       
+
         foreach (Vector3 point in crimeScene.m_pointCloud.m_points)
         {
             if (point.x <= _maxX && point.x >= _minX && point.z <= _maxZ && point.z >= _minZ)
@@ -131,9 +131,6 @@ public class PingState : ICrimeSceneState
                 {
                     if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
                     {
-
-                        //pTree.AddPoint(new double[] { x, y }, new EllipseWrapper(x, y));
-                        pTree.AddPoint(new double[] { point.x, point.y, point.z }, point);
 
                         points.Add(point);
                         // Group similar points into buckets based on sensitivity. 
@@ -150,7 +147,7 @@ public class PingState : ICrimeSceneState
                 }
             }
         }
-       
+
         stopwatch.Stop();
 
         // Write result.
@@ -158,32 +155,32 @@ public class PingState : ICrimeSceneState
 
         var mPoints = points.ToArray();
 
-       /* _targetKnn.build(mPoints, Enumerable.Range(0, points.Count).ToArray());
+        /* _targetKnn.build(mPoints, Enumerable.Range(0, points.Count).ToArray());
 
-        var targetIndices = _targetKnn.knearest(mPoints[0], 50);
+         var targetIndices = _targetKnn.knearest(mPoints[0], 50);
 
-        for (var i = 0; i < targetIndices.Length; i++)
-        {
-            Debug.Log(string.Format("targetIndices {0}: {1}",i, targetIndices[i]));
-            Debug.Log(string.Format("mPoints {0}: {1}", i, mPoints[i]));
-
-
-
-            GameObject advice = AddCube("advice_" + mPoints[i].x + "/" + mPoints[i].y + "/" + mPoints[i].z);
-
-            advice.transform.position = mPoints[i];
-
-            advice.SetActive(true);
-
-            _advicesList.Add(advice);
+         for (var i = 0; i < targetIndices.Length; i++)
+         {
+             Debug.Log(string.Format("targetIndices {0}: {1}",i, targetIndices[i]));
+             Debug.Log(string.Format("mPoints {0}: {1}", i, mPoints[i]));
 
 
-        }*/
+
+             GameObject advice = AddCube("advice_" + mPoints[i].x + "/" + mPoints[i].y + "/" + mPoints[i].z);
+
+             advice.transform.position = mPoints[i];
+
+             advice.SetActive(true);
+
+             _advicesList.Add(advice);
+
+
+         }*/
 
         return mPoints;
     }
 
-    private void AdaptAdvicePlaceHolders(List<GameObject> placeholderList, Vector3[] pointCloudPointList )
+    private void AdaptAdvicePlaceHolders(List<GameObject> placeholderList, Vector3[] pointCloudPointList)
     {
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
@@ -242,7 +239,7 @@ public class PingState : ICrimeSceneState
 
         List<List<GameObject>> splitted = SplitList(filteredList, max);
 
-        Random rnd = new Random();
+
 
         foreach (List<GameObject> list in splitted)
         {
@@ -252,7 +249,7 @@ public class PingState : ICrimeSceneState
                 plchlder.GetComponent<AdvicePlaceHolder>().Checked = true;
             }
 
-            int r = rnd.Next(list.Count);
+            int r = Random.Range(0, list.Count);
 
             GameObject placeholder = list[r];
 
@@ -281,7 +278,7 @@ public class PingState : ICrimeSceneState
 
             Vector3[] pointCloudPointList = PointCloudPointsICameraView();
 
-            Debug.Log(string.Format("dic: {0}",_pointDic.Count));
+            Debug.Log(string.Format("dic: {0}", _pointDic.Count));
 
             foreach (var pointList in _pointDic.Values)
             {
@@ -291,29 +288,48 @@ public class PingState : ICrimeSceneState
 
                     Vector3 sum = Vector3.zero;
 
-                    var pIter = pTree.NearestNeighbors(new double[] { pointList[0].x, pointList[0].y, pointList[0].z }, pointList.Count, 2.9f);
+                    int counter = 0;
+                    pTree = new KDTree<Vector3>(2);
+                    foreach (var point in pointList)
+                    {
+                        //pTree.AddPoint(new double[] { x, y }, new EllipseWrapper(x, y));
+                        pTree.AddPoint(new double[] { point.x, point.z }, point);
+                    }
 
-                    List<Vector3>pointArea = new List<Vector3>();
+                    int pos = Random.Range(0, pointList.Count - 1);
+                    var pIter = pTree.NearestNeighbors(new double[] { pointList[pos].x, pointList[pos].z }, pointList.Count, 0.15f);
 
+                    List<Vector3> pointArea = new List<Vector3>();
+                    Color color = Random.ColorHSV();
+                    Vector3 a = Vector3.zero;
+                    Vector3 b = Vector3.zero;
+                    int numOnLine = 0;
                     while (pIter.MoveNext())
                     {
                         // Get the ellipse.
-                        var point = pIter.Current;
-                        pointArea.Add(point);
-                    }
-
-                    int counter = 0;
-
-                    foreach (var point in pointList)
-                    {
-                        if (pointArea.Contains(point))
+                        sum += pIter.Current;
+                        if (a == Vector3.zero) a = pIter.Current;
+                        else if (b == Vector3.zero) b = pIter.Current;
+                        else if (Math.Abs((pIter.Current.x - a.x) / (b.x - a.x) - (pIter.Current.y - a.y) / (b.y - a.y)) <=1f && Math.Abs( (pIter.Current.y - a.y) / (b.y - a.y) - (pIter.Current.z - a.z) / (b.z - a.z))<=1f)
                         {
-                            sum += point;
-                            counter++;
+                            
+
+                            numOnLine++;
+
                         }
+                        counter++;
                     }
 
-                    Vector3 average = sum/counter;
+                    
+               
+
+                    if (counter < 10) continue;
+                    Debug.Log(numOnLine + " " + counter + "  " +( numOnLine / counter * 100));
+                    if (numOnLine / (counter * 100.0f) >= 80) continue;
+
+                        Debug.Log(counter);
+
+                    Vector3 average = sum / counter;
 
                     bool outOfReach = true;
 
@@ -327,15 +343,31 @@ public class PingState : ICrimeSceneState
                         }
                     }
 
-                    if(outOfReach)
+                    if (outOfReach)
                     {
-                   
-                        GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z);
+                        GameObject advice;
+                        pIter.Reset();
+                        while (pIter.MoveNext())
+                        {
+                            // Get the ellipse.
+
+
+                            advice = AddCube("placeholder" + pIter.Current.x + "/" + pIter.Current.y + "/" + pIter.Current.z);
+
+                            advice.transform.position = pIter.Current;
+
+                            advice.transform.localScale = new Vector3(1, 1, 1);
+
+                            advice.GetComponent<Renderer>().material.color = color;
+
+                            advice.SetActive(true);
+                        }
+                        advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z);
 
                         advice.transform.position = average;
 
                         advice.SetActive(true);
-
+                        advice.GetComponent<Renderer>().material.color = color;
                         _advicesList.Add(advice);
                     }
 
@@ -381,7 +413,7 @@ public class PingState : ICrimeSceneState
                 // das funktioniert leider nicht so!!!!! :( er findet leider den placeholder nicht
                 GameObject notFound = _notFounded.Find(x => x.transform.position == placeholder.transform.position);
 
-                GameObject placeholder_ =  (notFound) ? notFound : AddCube("placeholder_" + placeholder.name);
+                GameObject placeholder_ = (notFound) ? notFound : AddCube("placeholder_" + placeholder.name);
 
                 placeholder_.transform.position = placeholder.transform.position;
 
@@ -430,12 +462,12 @@ public class PingState : ICrimeSceneState
     public void OnGUIState()
     {
         GUI.color = Color.white;
-    
+
         if (!m_ping)
         {
             if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Ping</size>")) m_ping = true;
         }
-      
+
         m_show = GUI.Toggle(new Rect(Screen.width - 220, Screen.height - 100, 200, 80), m_show, "<size=30>Show</size>");
 
         GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), string.Format("<size=30> {0} / {1} Aadvices added!</size>", _advicesList.Count, crimeScene.m_numberAdvices));
