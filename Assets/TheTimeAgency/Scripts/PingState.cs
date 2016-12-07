@@ -132,17 +132,6 @@ public class PingState : ICrimeSceneState
                     if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
                     {
 
-                        /*for (float i = _minZ; i < _maxZ; i += 0.5f)
-                        {
-                            for (float j = _minX; j < _maxX; j += 0.5f)
-                            {
-
-                                Debug.Log(string.Format("{0}/{1}",i,j));
-
-                            }
-                        }*/
-
-
                         //pTree.AddPoint(new double[] { x, y }, new EllipseWrapper(x, y));
                         pTree.AddPoint(new double[] { point.x, point.y, point.z }, point);
 
@@ -168,26 +157,6 @@ public class PingState : ICrimeSceneState
         Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed));
 
         var mPoints = points.ToArray();
-
-        var pIter = pTree.NearestNeighbors(new double[] { mPoints[0].x, mPoints[0].y, mPoints[0].z }, 5, 0.9f);
-
-        while (pIter.MoveNext())
-        {
-            // Get the ellipse.
-            var point = pIter.Current;
-
-            Debug.Log(string.Format("p: {0}", point));
-
-            GameObject advice = AddCube("advice_" + point.x + "/" + point.y + "/" + point.z);
-
-            advice.transform.position = point;
-
-            advice.SetActive(true);
-
-            _advicesList.Add(advice);
-
-        }
-
 
        /* _targetKnn.build(mPoints, Enumerable.Range(0, points.Count).ToArray());
 
@@ -303,6 +272,11 @@ public class PingState : ICrimeSceneState
         {
             if (crimeScene.m_AdvicePlaceHolderList.Count <= 0) return;
 
+            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+
+            // Begin timing.
+            stopwatch.Start();
+
             m_ping = false;
 
             Vector3[] pointCloudPointList = PointCloudPointsICameraView();
@@ -317,12 +291,29 @@ public class PingState : ICrimeSceneState
 
                     Vector3 sum = Vector3.zero;
 
-                    foreach (var point in pointList)
+                    var pIter = pTree.NearestNeighbors(new double[] { pointList[0].x, pointList[0].y, pointList[0].z }, pointList.Count, 2.9f);
+
+                    List<Vector3>pointArea = new List<Vector3>();
+
+                    while (pIter.MoveNext())
                     {
-                        sum += point;
+                        // Get the ellipse.
+                        var point = pIter.Current;
+                        pointArea.Add(point);
                     }
 
-                    Vector3 average = sum/pointList.Count;
+                    int counter = 0;
+
+                    foreach (var point in pointList)
+                    {
+                        if (pointArea.Contains(point))
+                        {
+                            sum += point;
+                            counter++;
+                        }
+                    }
+
+                    Vector3 average = sum/counter;
 
                     bool outOfReach = true;
 
@@ -357,6 +348,11 @@ public class PingState : ICrimeSceneState
             //AdaptAdvicePlaceHolders(placeHolderList, pointCloudPointList);
 
             //SetAdvices();
+
+            stopwatch.Stop();
+
+            // Write result.
+            Debug.Log(string.Format("Time elapsed for AdaptAdvicePlaceHolders: {0}", stopwatch.Elapsed));
         }
 
         if (m_show)
