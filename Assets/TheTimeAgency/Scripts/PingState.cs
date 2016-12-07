@@ -242,6 +242,8 @@ public class PingState : ICrimeSceneState
         }
     }
 
+    List<Vector3> used = new List<Vector3>();
+
     public void UpdateState()
     {
         if (m_ping)
@@ -271,8 +273,11 @@ public class PingState : ICrimeSceneState
                 pTree = new KDTree<Vector3>(2);
                 foreach (var point in pointList)
                 {
-                    //pTree.AddPoint(new double[] { x, y }, new EllipseWrapper(x, y));
-                    pTree.AddPoint(new double[] { point.x, point.z }, point);
+                    if (!used.Contains(point))
+                    {
+                        //pTree.AddPoint(new double[] { x, y }, new EllipseWrapper(x, y));
+                        pTree.AddPoint(new double[] {point.x, point.z}, point);
+                    }
                 }
 
                 int pos = Random.Range(0, pointList.Count - 1);
@@ -286,23 +291,31 @@ public class PingState : ICrimeSceneState
                 Vector3 a = Vector3.zero;
                 Vector3 b = Vector3.zero;
                 int numOnLine = 0;
+
+                List<Vector3> temp = new List<Vector3>();
+
                 while (pIter.MoveNext())
                 {
+                    var point = pIter.Current;
+                    
                     // Get the ellipse.
-                    sum += pIter.Current;
+                    sum += point;
 
                     counter++;
 
-                    if (a == Vector3.zero) a = pIter.Current;
+                    if (a == Vector3.zero) a = point;
                     else if (b == Vector3.zero)
                     {
-                        b = pIter.Current;
+                        b = point;
                         numOnLine++;
                     }
-                    else if(PointInLine2D(a,b,pIter.Current))
+                    else if (PointInLine2D(a, b, point))
                     {
-                            numOnLine++;
+                        numOnLine++;
                     }
+
+                    temp.Add(point);
+                    
                 }
 
 
@@ -311,6 +324,10 @@ public class PingState : ICrimeSceneState
 
 
                 if (counter < 10 || numOnLine * 1.0f / counter * 100.0f >= 80) continue;
+
+                used.AddRange(temp);
+
+                Debug.Log(string.Format("used: {0}",used.Count));
 
                 Vector3 average = sum / counter;
 
