@@ -141,7 +141,10 @@ public class PingState : ICrimeSceneState
                             _pointDic.Add(roundedY, new List<Vector3>());
                         }
 
-                        _pointDic[roundedY].Add(point);
+                        if (!_pointDic[roundedY].Contains(point))
+                        {
+                            _pointDic[roundedY].Add(point);
+                        };
 
                     }
                 }
@@ -152,32 +155,8 @@ public class PingState : ICrimeSceneState
 
         // Write result.
         Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed));
-
-        var mPoints = points.ToArray();
-
-        /* _targetKnn.build(mPoints, Enumerable.Range(0, points.Count).ToArray());
-
-         var targetIndices = _targetKnn.knearest(mPoints[0], 50);
-
-         for (var i = 0; i < targetIndices.Length; i++)
-         {
-             Debug.Log(string.Format("targetIndices {0}: {1}",i, targetIndices[i]));
-             Debug.Log(string.Format("mPoints {0}: {1}", i, mPoints[i]));
-
-
-
-             GameObject advice = AddCube("advice_" + mPoints[i].x + "/" + mPoints[i].y + "/" + mPoints[i].z);
-
-             advice.transform.position = mPoints[i];
-
-             advice.SetActive(true);
-
-             _advicesList.Add(advice);
-
-
-         }*/
-
-        return mPoints;
+    
+        return points.ToArray(); ;
     }
 
     private void AdaptAdvicePlaceHolders(List<GameObject> placeholderList, Vector3[] pointCloudPointList)
@@ -280,99 +259,87 @@ public class PingState : ICrimeSceneState
 
             Debug.Log(string.Format("dic: {0}", _pointDic.Count));
 
-            foreach (var pointList in _pointDic.Values)
+            foreach (var key in _pointDic.Keys)
             {
 
-                if (pointList.Count > 10)
+                var pointList = _pointDic[key];
+
+                //Debug.Log(string.Format("Wir sind in der Y-Koordinate: {0} mit {1} points",key, pointList.Count));
+
+                if (pointList.Count <= 10) continue;
+                           
+                pTree = new KDTree<Vector3>(2);
+                foreach (var point in pointList)
                 {
-
-                    Vector3 sum = Vector3.zero;
-
-                    int counter = 0;
-                    pTree = new KDTree<Vector3>(2);
-                    foreach (var point in pointList)
-                    {
-                        //pTree.AddPoint(new double[] { x, y }, new EllipseWrapper(x, y));
-                        pTree.AddPoint(new double[] { point.x, point.z }, point);
-                    }
-
-                    int pos = Random.Range(0, pointList.Count - 1);
-                    var pIter = pTree.NearestNeighbors(new double[] { pointList[pos].x, pointList[pos].z }, pointList.Count, 0.15f);
-
-                    List<Vector3> pointArea = new List<Vector3>();
-                    Color color = Random.ColorHSV();
-                    Vector3 a = Vector3.zero;
-                    Vector3 b = Vector3.zero;
-                    int numOnLine = 0;
-                    while (pIter.MoveNext())
-                    {
-                        // Get the ellipse.
-                        sum += pIter.Current;
-                        if (a == Vector3.zero) a = pIter.Current;
-                        else if (b == Vector3.zero) b = pIter.Current;
-                        else if (Math.Abs((pIter.Current.x - a.x) / (b.x - a.x) - (pIter.Current.y - a.y) / (b.y - a.y)) <=1f && Math.Abs( (pIter.Current.y - a.y) / (b.y - a.y) - (pIter.Current.z - a.z) / (b.z - a.z))<=1f)
-                        {
-                            
-
-                            numOnLine++;
-
-                        }
-                        counter++;
-                    }
-
-                    
-               
-
-                    if (counter < 10) continue;
-                    Debug.Log(numOnLine + " " + counter + "  " +( numOnLine / counter * 100));
-                    if (numOnLine / (counter * 100.0f) >= 80) continue;
-
-                        Debug.Log(counter);
-
-                    Vector3 average = sum / counter;
-
-                    bool outOfReach = true;
-
-                    foreach (var advice in _advicesList)
-                    {
-                        float dist = Vector3.Distance(advice.transform.position, average);
-
-                        if (dist < 0.5f)
-                        {
-                            outOfReach = false;
-                        }
-                    }
-
-                    if (outOfReach)
-                    {
-                        GameObject advice;
-                        pIter.Reset();
-                        while (pIter.MoveNext())
-                        {
-                            // Get the ellipse.
-
-
-                            advice = AddCube("placeholder" + pIter.Current.x + "/" + pIter.Current.y + "/" + pIter.Current.z);
-
-                            advice.transform.position = pIter.Current;
-
-                            advice.transform.localScale = new Vector3(1, 1, 1);
-
-                            advice.GetComponent<Renderer>().material.color = color;
-
-                            advice.SetActive(true);
-                        }
-                        advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z);
-
-                        advice.transform.position = average;
-
-                        advice.SetActive(true);
-                        advice.GetComponent<Renderer>().material.color = color;
-                        _advicesList.Add(advice);
-                    }
-
-
+                    //pTree.AddPoint(new double[] { x, y }, new EllipseWrapper(x, y));
+                    pTree.AddPoint(new double[] { point.x, point.z }, point);
                 }
+
+                int pos = Random.Range(0, pointList.Count - 1);
+                var pIter = pTree.NearestNeighbors(new double[] { pointList[pos].x, pointList[pos].z }, pointList.Count, 0.15f);
+
+                Vector3 sum = Vector3.zero;
+                int counter = 0;
+                
+                List<Vector3> pointArea = new List<Vector3>();
+                Color color = Random.ColorHSV();
+                Vector3 a = Vector3.zero;
+                Vector3 b = Vector3.zero;
+                int numOnLine = 0;
+                while (pIter.MoveNext())
+                {
+                    // Get the ellipse.
+                    sum += pIter.Current;
+
+                    counter++;
+
+                    if (a == Vector3.zero) a = pIter.Current;
+                    else if (b == Vector3.zero)
+                    {
+                        b = pIter.Current;
+                        numOnLine++;
+                    }
+                    else if(PointInLine2D(a,b,pIter.Current))
+                    {
+                            numOnLine++;
+                    }
+                }
+
+
+                //Debug.Log("Points im Radius: " + counter);
+                //Debug.Log(string.Format("Davon in einer Linie {0} von {1} / {2}%",numOnLine, counter, numOnLine * 1.0f / counter * 100.0f));
+
+
+                if (counter < 10 || numOnLine * 1.0f / counter * 100.0f >= 80) continue;
+
+                Vector3 average = sum / counter;
+
+                bool outOfReach = true;
+
+                foreach (var oldAdvice in _advicesList)
+                {
+                    float dist = Vector3.Distance(oldAdvice.transform.position, average);
+
+                    if (dist < 0.5f)
+                    {
+                        outOfReach = false;
+                    }
+                }
+
+                //Debug.Log(string.Format("Stelle gefunden bei: {0} und hat genügend Abstand: {1}", average, outOfReach));
+
+                if (!outOfReach) continue;
+                
+                GameObject advice;
+                pIter.Reset();
+               
+                advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z);
+
+                advice.transform.position = average;
+
+                advice.SetActive(true);
+                advice.GetComponent<Renderer>().material.color = color;
+                _advicesList.Add(advice); 
             }
 
             //List<GameObject> placeHolderList = PlaceholderInCameraView();
@@ -393,6 +360,12 @@ public class PingState : ICrimeSceneState
             m_show = false;
         }
 
+    }
+
+    private bool PointInLine2D(Vector3 p, Vector3 a, Vector3 b, float t = 0.001f)
+    {
+        float zero = (b.x - a.x)*(p.z - a.z) - (p.x - a.x)*(b.z - a.z);
+        return Math.Abs(zero) < t;
     }
 
     private void ShowAllInactiveCubes()

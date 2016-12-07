@@ -23,10 +23,10 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
     private Vector3[] defaultMarker = new[]
     {
-        new Vector3(1f, -1.300f, 2f),
-        new Vector3(2f, -1.300f, -1f),
-        new Vector3(-1f, -1.300f, -2f),
-        new Vector3(-3f, -1.300f, 3f),
+        new Vector3(0.8f, -1.300f, 3.9f),
+        new Vector3(1.7f, -1.300f, 0.29f),
+        new Vector3(-1.6f, -1.300f, -0.7f),
+        new Vector3(-2.9f, -1.300f, 1.6f),
     };
 
     public void StartState()
@@ -45,8 +45,8 @@ public class MarkCrimeSceneState : ICrimeSceneState
         if (crimeScene.m_pointCloudFloor.m_floorFound && crimeScene.m_pointCloud.m_floorFound)
         {
 
-            //Vector3 target = defaultMarker[crimeScene.markerList.Count];
-            Vector3 target = getFloorCoordinate();
+            Vector3 target = defaultMarker[crimeScene.markerList.Count];
+            //Vector3 target = getFloorCoordinate();
 
             // copy of the maker
             GameObject myMarker = Object.Instantiate(crimeScene.m_marker);
