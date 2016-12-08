@@ -131,43 +131,50 @@ public class PingState : ICrimeSceneState
             foreach (var key in _pointDic.Keys)
             {
 
-                var pointList = _pointDic[key];
+                var pointListCopy = _pointDic[key].ToList();
 
-                Debug.Log(string.Format("Wir sind in der Y-Koordinate: {0} mit {1} points",key, pointList.Count));
+                Debug.Log(string.Format("Wir sind in der Y-Koordinate: {0} mit {1} points", key, pointListCopy.Count));
 
-                if (pointList.Count <= 10) continue;
+                while (pointListCopy.Count > 10)
+                {
 
-                List<Vector3> tempUsedPoints = new List<Vector3>();
+                    List<Vector3> tempUsedPoints = new List<Vector3>();
 
-                KDTree<Vector3> pTree = CreateVector2KDTree(pointList, tempUsedPoints);
+                    KDTree<Vector3> pTree = CreateVector2KDTree(pointListCopy, tempUsedPoints);
 
-                int pos = Random.Range(0, pointList.Count - 1);
-                var pIter = pTree.NearestNeighbors(new double[] { pointList[pos].x, pointList[pos].z }, pointList.Count, 0.15f);
+                    int pos = Random.Range(0, pointListCopy.Count - 1);
+                    var pIter = pTree.NearestNeighbors(new double[] {pointListCopy[pos].x, pointListCopy[pos].z},
+                        pointListCopy.Count, 0.15f);
 
-                int counter = 0;
-                int numOnLine = 0;
+                    int counter = 0;
+                    int numOnLine = 0;
 
-                Vector3 average = CalcAverageOfArea(pIter, counter, numOnLine);
+                    Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine, pointListCopy);
 
-                Debug.Log("Points im Radius: " + counter);                 
-                Debug.Log(string.Format("Davon in einer Linie {0} von {1} / {2}%",numOnLine, counter, numOnLine * 1.0f / counter * 100.0f));
+                    Debug.Log("Points im Radius: " + counter);
+                    Debug.Log(string.Format("Davon in einer Linie {0} von {1} / {2}%", numOnLine, counter,
+                        numOnLine*1.0f/counter*100.0f));
 
-                if (counter < 10 || numOnLine * 1.0f / counter * 100.0f >= 80) continue;
+                    if (counter < 10 || numOnLine*1.0f/counter*100.0f >= 80) continue;
 
-                _usedPoints.AddRange(tempUsedPoints);
+                    _usedPoints.AddRange(tempUsedPoints);
 
-                Debug.Log(string.Format("used: {0}", _usedPoints.Count));
+                    Debug.Log(string.Format("used: {0}", _usedPoints.Count));
 
-                bool outOfReach = !InReachToOutherAdvices(average);
+                    bool outOfReach = !InReachToOutherAdvices(average);
 
-                Debug.Log(string.Format("Stelle gefunden bei: {0} und hat genügend Abstand: {1}", average, outOfReach));
+                    Debug.Log(string.Format("Stelle gefunden bei: {0} und hat genügend Abstand: {1}", average,
+                        outOfReach));
 
-                if (outOfReach) continue;
+                    if (!outOfReach) continue;
 
-                Color color = Random.ColorHSV();
-                GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average, color);
+                    Color color = Random.ColorHSV();
 
-                _advicesList.Add(advice); 
+                    GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average,
+                        color);
+
+                    _advicesList.Add(advice);
+                }
             }
 
             stopwatch.Stop();
@@ -184,7 +191,7 @@ public class PingState : ICrimeSceneState
 
     }
 
-    private Vector3 CalcAverageOfArea(NearestNeighbour<Vector3> pIter, int counter, int numOnLine)
+    private Vector3 CalcAverageOfArea(NearestNeighbour<Vector3> pIter, ref int counter, ref int numOnLine, List<Vector3> pointList )
     {
         Vector3 sum = Vector3.zero;
         Vector3 a = Vector3.zero;
@@ -208,6 +215,8 @@ public class PingState : ICrimeSceneState
             {
                 numOnLine++;
             }
+
+            pointList.Remove(point);
         }
 
         return sum/counter;
@@ -246,8 +255,7 @@ public class PingState : ICrimeSceneState
         return inReach;
     }
 
-
-    private bool PointInLine2D(Vector3 p, Vector3 a, Vector3 b, float t = 0.001f)
+    private static bool PointInLine2D(Vector3 p, Vector3 a, Vector3 b, float t = 0.001f)
     {
         float zero = (b.x - a.x)*(p.z - a.z) - (p.x - a.x)*(b.z - a.z);
         return Math.Abs(zero) < t;
@@ -275,25 +283,27 @@ public class PingState : ICrimeSceneState
     private GameObject AddCube(string name, Vector3 position, Color color)
     {
         // copy of the maker
-        GameObject cube = Object.Instantiate<GameObject>(crimeScene.m_advice);
+        GameObject cubeCopy = Object.Instantiate<GameObject>(crimeScene.m_advice);
 
-        cube.name = name;
+        cubeCopy.name = name;
 
         //http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
         //Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation.
-        cube.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
+        cubeCopy.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
         // Place the marker at the center of the screen at the found floor height.
 
         // adding a Colider for ping state
-        BoxCollider bc = (BoxCollider)cube.gameObject.AddComponent(typeof(BoxCollider));
+        BoxCollider bc = (BoxCollider)cubeCopy.gameObject.AddComponent(typeof(BoxCollider));
         bc.center = Vector3.zero;
 
-        cube.transform.position = position;
+        cubeCopy.transform.position = position;
 
-        cube.SetActive(true);
+        cubeCopy.GetComponent<Renderer>().material.color = color;
 
-        cube.GetComponent<Renderer>().material.color = color;
+        cubeCopy.SetActive(true);
 
-        return cube;
+        Debug.Log(string.Format("Cube {0} set on {1}", cubeCopy.name, cubeCopy.transform.position));
+
+        return cubeCopy;
     }
 }
