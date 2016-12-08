@@ -1,49 +1,20 @@
 ﻿using UnityEngine;
 
-public class V3
+namespace Assets.TheTimeAgency.Scripts
 {
-    public float x
+    public struct V3
     {
-        get { return _vec3.x; }
+        public float x, y, z;
+        public Vector3 Vec3;
+        public bool Examined;
 
-        set
+        public V3(Vector3 v3)
         {
-            _vec3.x = value;
+            Vec3 = v3;
+            x = Vec3.x;
+            y = Vec3.y;
+            z = Vec3.z;
+            Examined = false;
         }
-    }
-
-    public float y
-    {
-        get { return _vec3.y; }
-
-        set
-        {
-            _vec3.y = value;
-        }
-
-    }
-
-    public float z
-    {
-        get { return _vec3.z; }
-
-        set
-        {
-            _vec3.z = value;
-        }
-    }
-
-    public bool Checked { get; set; }
-
-    private Vector3 _vec3;
-
-    public Vector3 vec3
-    {
-        get { return _vec3; }
-    }
-
-    public V3(Vector3 v3)
-    {
-        _vec3 = v3;
     }
 }
