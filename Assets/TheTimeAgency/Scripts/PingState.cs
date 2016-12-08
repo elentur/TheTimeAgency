@@ -19,39 +19,22 @@ public class PingState : ICrimeSceneState
     /// </summary>
     private const float SENSITIVITY = 0.002f;
 
-    /// <summary>
-    /// The minimum number of points near a world position y to determine that it is not simply noise points.
-    /// </summary>
-    private const int NOISE_THRESHOLD = 50;
-
-    /// <summary>
-    /// The minimum number of points near a world position y to determine that it is a reasonable floor.
-    /// </summary>
-    private const int RECOGNITION_THRESHOLD = 100;
-
     private bool m_ping, m_show;
 
-    private readonly List<GameObject> _advicesList, _founded, _notFounded;
+    private readonly List<GameObject> _advicesList;
+
+    private readonly List<Vector3> _usedPoints;
 
     private float _maxX, _minX, _maxZ, _minZ;
 
     private readonly SortedDictionary<float, List<Vector3>> _pointDic;
 
-    private KNN _targetKnn;
-
-    private KDTree<Vector3> pTree;
-
     public PingState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
         _advicesList = new List<GameObject>();
-        _founded = new List<GameObject>();
-        _notFounded = new List<GameObject>();
         _pointDic = new SortedDictionary<float, List<Vector3>>();
-
-        _targetKnn = new KNN();
-
-        pTree = new KDTree<Vector3>(3);
+        _usedPoints =  new List<Vector3>();
     }
 
     public void StartState()
@@ -82,38 +65,6 @@ public class PingState : ICrimeSceneState
         return (viewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint) && viewportPoint.z < Camera.main.farClipPlane);
     }
 
-    private List<GameObject> PlaceholderInCameraView()
-    {
-        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-
-        // Begin timing.
-        stopwatch.Start();
-
-        List<GameObject> placeHolders = new List<GameObject>();
-
-        foreach (GameObject placeholder in crimeScene.m_AdvicePlaceHolderList)
-        {
-
-            var script = placeholder.GetComponent<AdvicePlaceHolder>();
-            // placeholder is already adapted and in the Dictionary
-            if (script.Adapted) continue;
-
-            var point = placeholder.transform.position;
-
-            if (InfiniteCameraCanSeePoint(point))
-            {
-                placeHolders.Add(placeholder);
-            }
-        }
-
-        stopwatch.Stop();
-
-        // Write result.
-        Debug.Log(string.Format("Time elapsed for PlaceholderInCameraView: {0}", stopwatch.Elapsed));
-
-        return placeHolders;
-    }
-
     private Vector3[] PointCloudPointsICameraView()
     {
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
@@ -131,7 +82,6 @@ public class PingState : ICrimeSceneState
                 {
                     if (crimeScene.triangleList[0].PointInTriangle(point) || crimeScene.triangleList[1].PointInTriangle(point))
                     {
-
                         points.Add(point);
                         // Group similar points into buckets based on sensitivity. 
                         float roundedY = Mathf.Round(point.y / SENSITIVITY) * SENSITIVITY;
@@ -159,90 +109,7 @@ public class PingState : ICrimeSceneState
         return points.ToArray(); ;
     }
 
-    private void AdaptAdvicePlaceHolders(List<GameObject> placeholderList, Vector3[] pointCloudPointList)
-    {
-        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-
-        // Begin timing.
-        stopwatch.Start();
-
-        foreach (var placeholder in placeholderList)
-        {
-
-            var script = placeholder.GetComponent<AdvicePlaceHolder>();
-
-            float y = placeholder.transform.position.y;
-
-            Collider c = placeholder.GetComponent<Collider>();
-
-            placeholder.SetActive(true);
-
-            foreach (Vector3 p in pointCloudPointList)
-            {
-                if (c.bounds.Contains(new Vector3(p.x, placeholder.transform.position.y, p.z)))
-                {
-                    script.Adapted = true;
-                    if (y >= p.y) continue;
-                    y = p.y;
-                    break;
-                }
-            }
-
-            if (script.Adapted)
-            {
-
-                var target = placeholder.transform.position;
-
-                target.y = y;
-                placeholder.transform.position = target;
-                script.Heigth = y;
-
-                if (!_founded.Contains(placeholder)) _founded.Add(placeholder);
-            }
-
-        }
-
-        stopwatch.Stop();
-
-        // Write result.
-        Debug.Log(string.Format("Time elapsed for AdaptAdvicePlaceHolders: {0}", stopwatch.Elapsed));
-    }
-
-    public void SetAdvices()
-    {
-
-        // TODO eventuell in SplitList auslagern
-        List<GameObject> filteredList = _founded.Where(x => !x.GetComponent<AdvicePlaceHolder>().Checked).ToList();
-
-        int max = crimeScene.m_AdvicePlaceHolderList.Count / crimeScene.m_numberAdvices;
-
-        List<List<GameObject>> splitted = SplitList(filteredList, max);
-
-
-
-        foreach (List<GameObject> list in splitted)
-        {
-
-            foreach (var plchlder in list)
-            {
-                plchlder.GetComponent<AdvicePlaceHolder>().Checked = true;
-            }
-
-            int r = Random.Range(0, list.Count);
-
-            GameObject placeholder = list[r];
-
-            GameObject advice = AddCube("advice_" + placeholder.name);
-
-            advice.transform.position = placeholder.transform.position;
-
-            advice.SetActive(true);
-
-            _advicesList.Add(advice);
-        }
-    }
-
-    List<Vector3> used = new List<Vector3>();
+    
 
     public void UpdateState()
     {
@@ -266,104 +133,42 @@ public class PingState : ICrimeSceneState
 
                 var pointList = _pointDic[key];
 
-                //Debug.Log(string.Format("Wir sind in der Y-Koordinate: {0} mit {1} points",key, pointList.Count));
+                Debug.Log(string.Format("Wir sind in der Y-Koordinate: {0} mit {1} points",key, pointList.Count));
 
                 if (pointList.Count <= 10) continue;
-                           
-                pTree = new KDTree<Vector3>(2);
-                foreach (var point in pointList)
-                {
-                    if (!used.Contains(point))
-                    {
-                        //pTree.AddPoint(new double[] { x, y }, new EllipseWrapper(x, y));
-                        pTree.AddPoint(new double[] {point.x, point.z}, point);
-                    }
-                }
+
+                List<Vector3> tempUsedPoints = new List<Vector3>();
+
+                KDTree<Vector3> pTree = CreateVector2KDTree(pointList, tempUsedPoints);
 
                 int pos = Random.Range(0, pointList.Count - 1);
                 var pIter = pTree.NearestNeighbors(new double[] { pointList[pos].x, pointList[pos].z }, pointList.Count, 0.15f);
 
-                Vector3 sum = Vector3.zero;
                 int counter = 0;
-                
-                List<Vector3> pointArea = new List<Vector3>();
-                Color color = Random.ColorHSV();
-                Vector3 a = Vector3.zero;
-                Vector3 b = Vector3.zero;
                 int numOnLine = 0;
 
-                List<Vector3> temp = new List<Vector3>();
+                Vector3 average = CalcAverageOfArea(pIter, counter, numOnLine);
 
-                while (pIter.MoveNext())
-                {
-                    var point = pIter.Current;
-                    
-                    // Get the ellipse.
-                    sum += point;
-
-                    counter++;
-
-                    if (a == Vector3.zero) a = point;
-                    else if (b == Vector3.zero)
-                    {
-                        b = point;
-                        numOnLine++;
-                    }
-                    else if (PointInLine2D(a, b, point))
-                    {
-                        numOnLine++;
-                    }
-
-                    temp.Add(point);
-                    
-                }
-
-
-                //Debug.Log("Points im Radius: " + counter);
-                //Debug.Log(string.Format("Davon in einer Linie {0} von {1} / {2}%",numOnLine, counter, numOnLine * 1.0f / counter * 100.0f));
-
+                Debug.Log("Points im Radius: " + counter);                 
+                Debug.Log(string.Format("Davon in einer Linie {0} von {1} / {2}%",numOnLine, counter, numOnLine * 1.0f / counter * 100.0f));
 
                 if (counter < 10 || numOnLine * 1.0f / counter * 100.0f >= 80) continue;
 
-                used.AddRange(temp);
+                _usedPoints.AddRange(tempUsedPoints);
 
-                Debug.Log(string.Format("used: {0}",used.Count));
+                Debug.Log(string.Format("used: {0}", _usedPoints.Count));
 
-                Vector3 average = sum / counter;
+                bool outOfReach = !InReachToOutherAdvices(average);
 
-                bool outOfReach = true;
+                Debug.Log(string.Format("Stelle gefunden bei: {0} und hat genügend Abstand: {1}", average, outOfReach));
 
-                foreach (var oldAdvice in _advicesList)
-                {
-                    float dist = Vector3.Distance(oldAdvice.transform.position, average);
+                if (outOfReach) continue;
 
-                    if (dist < 0.5f)
-                    {
-                        outOfReach = false;
-                    }
-                }
+                Color color = Random.ColorHSV();
+                GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average, color);
 
-                //Debug.Log(string.Format("Stelle gefunden bei: {0} und hat genügend Abstand: {1}", average, outOfReach));
-
-                if (!outOfReach) continue;
-                
-                GameObject advice;
-                pIter.Reset();
-               
-                advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z);
-
-                advice.transform.position = average;
-
-                advice.SetActive(true);
-                advice.GetComponent<Renderer>().material.color = color;
                 _advicesList.Add(advice); 
             }
-
-            //List<GameObject> placeHolderList = PlaceholderInCameraView();
-
-            //AdaptAdvicePlaceHolders(placeHolderList, pointCloudPointList);
-
-            //SetAdvices();
 
             stopwatch.Stop();
 
@@ -379,6 +184,69 @@ public class PingState : ICrimeSceneState
 
     }
 
+    private Vector3 CalcAverageOfArea(NearestNeighbour<Vector3> pIter, int counter, int numOnLine)
+    {
+        Vector3 sum = Vector3.zero;
+        Vector3 a = Vector3.zero;
+        Vector3 b = Vector3.zero;
+
+        while (pIter.MoveNext())
+        {
+            var point = pIter.Current;
+
+            sum += point;
+
+            counter++;
+
+            if (a == Vector3.zero) a = point;
+            else if (b == Vector3.zero)
+            {
+                b = point;
+                numOnLine++;
+            }
+            else if (PointInLine2D(a, b, point))
+            {
+                numOnLine++;
+            }
+        }
+
+        return sum/counter;
+    }
+
+    private KDTree<Vector3> CreateVector2KDTree(List<Vector3> pointList, List<Vector3> tempUsedPoints)
+    {
+
+        KDTree<Vector3> KDTree = new KDTree<Vector3>(2);
+
+        foreach (var point in pointList)
+        {
+            if (!_usedPoints.Contains(point))
+            {
+                //pTree.AddPoint(new double[] { x, y }, new EllipseWrapper(x, y));
+                KDTree.AddPoint(new double[] { point.x, point.z }, point);
+                tempUsedPoints.Add(point);
+            }
+        }
+
+        return KDTree;
+    }
+
+    private bool InReachToOutherAdvices(Vector3 point, float minDist = 0.5f)
+    {
+        bool inReach = false;
+        foreach (var oldAdvice in _advicesList)
+        {
+            float dist = Vector3.Distance(oldAdvice.transform.position, point);
+            if (dist <= minDist)
+            {
+                inReach = true;
+            }
+        }
+
+        return inReach;
+    }
+
+
     private bool PointInLine2D(Vector3 p, Vector3 a, Vector3 b, float t = 0.001f)
     {
         float zero = (b.x - a.x)*(p.z - a.z) - (p.x - a.x)*(b.z - a.z);
@@ -388,65 +256,6 @@ public class PingState : ICrimeSceneState
     private void ShowAllInactiveCubes()
     {
 
-        // disable all placeholders
-        foreach (var placeholder in _notFounded)
-        {
-            placeholder.SetActive(false);
-        }
-
-        // set all unvisted placeholder active
-        foreach (var placeholder in crimeScene.m_AdvicePlaceHolderList)
-        {
-
-            if (!placeholder.GetComponent<AdvicePlaceHolder>().Checked)
-            {
-                // das funktioniert leider nicht so!!!!! :( er findet leider den placeholder nicht
-                GameObject notFound = _notFounded.Find(x => x.transform.position == placeholder.transform.position);
-
-                GameObject placeholder_ = (notFound) ? notFound : AddCube("placeholder_" + placeholder.name);
-
-                placeholder_.transform.position = placeholder.transform.position;
-
-                placeholder_.GetComponent<Renderer>().material.color = Color.green;
-
-                placeholder_.SetActive(true);
-
-                if (!_notFounded.Contains(placeholder_)) _notFounded.Add(placeholder_);
-
-            }
-        }
-    }
-
-    private static List<List<GameObject>> SplitList(List<GameObject> locations, int nSize = 30)
-    {
-        var list = new List<List<GameObject>>();
-
-        for (int i = 0; i < locations.Count; i += nSize)
-        {
-            if (nSize <= locations.Count - i)
-            {
-                list.Add(locations.GetRange(i, Math.Min(nSize, locations.Count - i)));
-            }
-        }
-
-        return list;
-    }
-
-    private List<GameObject> GetGameobjectsInRadius(GameObject target, List<GameObject> list, float distance)
-    {
-
-        List<GameObject> neighbours = new List<GameObject>();
-
-        foreach (GameObject cube in list)
-        {
-
-            //Debug.Log(string.Format("distance: {0}", Vector3.Distance(target.transform.position, cube.transform.position)));
-
-            if (Vector3.Distance(target.transform.position, cube.transform.position) < distance)
-                neighbours.Add(cube);
-        }
-
-        return neighbours;
     }
 
     public void OnGUIState()
@@ -463,40 +272,28 @@ public class PingState : ICrimeSceneState
         GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), string.Format("<size=30> {0} / {1} Aadvices added!</size>", _advicesList.Count, crimeScene.m_numberAdvices));
     }
 
-    public class Comparer : IEqualityComparer<Vector3>
-    {
-        public bool Equals(Vector3 vecL, Vector3 vecR)
-        {
-            return Math.Abs(vecL.x - vecR.x) < SENSITIVITY && Math.Abs(vecL.y - vecR.y) < SENSITIVITY && Math.Abs(vecL.z - vecR.z) < SENSITIVITY;
-        }
-
-        public int GetHashCode(Vector3 vector)
-        {
-            int x = Mathf.RoundToInt(vector.x);
-            int y = Mathf.RoundToInt(vector.y);
-            int z = Mathf.RoundToInt(vector.z);
-            return x * 1000 + z + y * 1000000;
-        }
-    }
-
-    private GameObject AddCube(string name)
+    private GameObject AddCube(string name, Vector3 position, Color color)
     {
         // copy of the maker
-        GameObject myCube = Object.Instantiate<GameObject>(crimeScene.m_advice);
+        GameObject cube = Object.Instantiate<GameObject>(crimeScene.m_advice);
 
-        myCube.name = name;
+        cube.name = name;
 
         //http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
         //Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation.
-        myCube.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
+        cube.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
         // Place the marker at the center of the screen at the found floor height.
 
         // adding a Colider for ping state
-        BoxCollider bc = (BoxCollider)myCube.gameObject.AddComponent(typeof(BoxCollider));
+        BoxCollider bc = (BoxCollider)cube.gameObject.AddComponent(typeof(BoxCollider));
         bc.center = Vector3.zero;
 
-        myCube.SetActive(false);
+        cube.transform.position = position;
 
-        return myCube;
+        cube.SetActive(true);
+
+        cube.GetComponent<Renderer>().material.color = color;
+
+        return cube;
     }
 }
