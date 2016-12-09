@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using System.ComponentModel;
+using UnityEngine;
 
 namespace Assets.TheTimeAgency.Scripts
 {
@@ -14,7 +16,7 @@ namespace Assets.TheTimeAgency.Scripts
             x = Vec3.x;
             y = Vec3.y;
             z = Vec3.z;
-            Examined = false;
+            Examined = new Boolean();
         }
     }
 }
