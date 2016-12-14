@@ -8,6 +8,7 @@ namespace Assets.TheTimeAgency.Scripts
     {
         private readonly Vector3[] _vecArray;
         private double Area;
+        private double Surface;
 
         public Triangle2D(Vector3 vec1, Vector3 vec2, Vector3 vec3)
         {
@@ -17,7 +18,7 @@ namespace Assets.TheTimeAgency.Scripts
             Vector3 p1 = _vecArray[1];
             Vector3 p2 = _vecArray[2];
 
-            Area = 0.5 * (-p1.z * p2.x + p0.z * (-p1.x + p2.x) + p0.x * (p1.z - p2.z) + p1.x * p2.z);
+            Surface3D(p0, p1, p2);
         }
 
         public Triangle2D(Vector3[] vecArray)
@@ -29,6 +30,11 @@ namespace Assets.TheTimeAgency.Scripts
             Vector3 p1 = _vecArray[1];
             Vector3 p2 = _vecArray[2];
 
+            Surface3D(p0, p1, p2);
+        }
+
+        private void Surface3D(Vector3 p0, Vector3 p1, Vector3 p2)
+        {
             Area = 0.5 * (-p1.z * p2.x + p0.z * (-p1.x + p2.x) + p0.x * (p1.z - p2.z) + p1.x * p2.z);
         }
 
@@ -82,6 +88,11 @@ namespace Assets.TheTimeAgency.Scripts
         public override string ToString()
         {
             return "Triangle2D: a:" + _vecArray[0].ToString() + " b:" + _vecArray[1].ToString() + " c:" + _vecArray[2].ToString();
+        }
+
+        public double Sureface()
+        {
+            return Area;
         }
     }
 }

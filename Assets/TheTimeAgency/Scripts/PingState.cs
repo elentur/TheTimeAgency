@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using Assets.TheTimeAgency.Scripts.KDTree;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -19,11 +20,15 @@ namespace Assets.TheTimeAgency.Scripts
         /// </summary>
         private const float SENSITIVITY = 0.002f;
 
+        private const float DISTANCE = 0.5f;
+
         private bool m_ping, m_show;
 
         private readonly List<GameObject> _advicesList;
 
         private float _maxX, _minX, _maxZ, _minZ;
+
+        private double Area;
 
         private readonly SortedDictionary<float, List<V3>> _pointDic;
 
@@ -37,6 +42,7 @@ namespace Assets.TheTimeAgency.Scripts
         public void StartState()
         {
             SetMaxMin();
+            Area = _crimeScene.triangleList[0].Sureface() + _crimeScene.triangleList[1].Sureface();
         }
 
         private void SetMaxMin()
@@ -102,8 +108,6 @@ namespace Assets.TheTimeAgency.Scripts
             Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed)); ;
         }
 
-
-
         public void UpdateState()
         {
 
@@ -121,43 +125,53 @@ namespace Assets.TheTimeAgency.Scripts
                 PointCloudPointsInCameraView();
 
                 Debug.Log(string.Format("dic: {0}", _pointDic.Count));
-
-                foreach (var pointList in _pointDic.Values)
+   
+                foreach (var y in _pointDic.Keys)
                 {
-                    bool fertig = false;
+                    var pointList = _pointDic[y];
+                    var copyList = new List<V3>();
 
-                    /*while (!fertig)
-                    {*/
-                        KDTree<V3> pTree = CreateVector2KDTree(pointList, ref fertig);
+                    foreach (var point in pointList)
+                    {
+                        if (!point.Examined)
+                        {
+                            copyList.Add(point);
+                        }
+                    }
 
-                        int pos = Random.Range(0, pointList.Count - 1);
+                    Debug.Log("My Y: " + y);
 
-                        var pIter = pTree.NearestNeighbors(new double[] { pointList[pos].x, pointList[pos].z }, pointList.Count, 0.15f);
+                    while (copyList.Count > 50)
+                    {
+
+                        Debug.Log("copyList length: " + copyList.Count);
+
+                        KDTree<V3> pTree = CreateVector2KDTree(copyList);
+
+                        var pIter = pTree.NearestNeighbors(new double[] { copyList[0].x, copyList[0].z }, copyList.Count, DISTANCE);
 
                         int counter = 0;
                         int numOnLine = 0;
 
                         List<V3> temp = new List<V3>();
 
-                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine, temp);
+                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine, copyList, temp);
 
-                        if (counter < 10 || numOnLine * 1.0f / counter * 100.0f >= 80) continue;
+                        if (counter < 100 || numOnLine * 1.0f / counter * 100.0f >= 80) continue;
 
-                        bool outOfReach = !InReachToOutherAdvices(average);
+                        bool outOfReach = !InReachToOutherAdvices(average, DISTANCE);
 
                         if (!outOfReach) continue;
 
+                        SetPointsExamined(pointList, temp);
 
-                    Debug.Log("temp" + temp.Count);
+                        Color color = Random.ColorHSV();
 
-                    SetPointsExamined(temp);
-
-                    Color color = Random.ColorHSV();
-
-                        GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average, color);
+                        GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average, color, new Vector3(10, 10, 10));
 
                         _advicesList.Add(advice);
-                   /* }*/
+                   }
+
                 }
 
                 stopwatch.Stop();
@@ -171,17 +185,24 @@ namespace Assets.TheTimeAgency.Scripts
                 ShowAllInactiveCubes();
                 m_show = false;
             }
-
+        
         }
 
-        private void SetPointsExamined(List<V3> temp)
+        private void SetPointsExamined(List<V3> pointList, List<V3> temp)
         {
-            temp.Select(o => { o.Examined = true;
-                return o;
-            }).ToList();
+            foreach (var v3 in temp)
+            {
+                var index = pointList.IndexOf(v3);
+                if (index > -1)
+                {
+                    var point = pointList[index];
+                    point.Examined = true;
+                    pointList[index] = point;
+                }
+            }
         }
 
-        private Vector3 CalcAverageOfArea(NearestNeighbour<V3> pIter, ref int counter, ref int numOnLine, List<V3> temp )
+        private Vector3 CalcAverageOfArea(NearestNeighbour<V3> pIter, ref int counter, ref int numOnLine, List<V3> list, List<V3> temp)
         {
             Vector3 sum = Vector3.zero;
             Vector3 a = Vector3.zero;
@@ -190,7 +211,10 @@ namespace Assets.TheTimeAgency.Scripts
             while (pIter.MoveNext())
             {
                 var v3 = pIter.Current;
+
                 temp.Add(v3);
+                list.Remove(v3);
+
                 var point = v3.Vec3;
 
                 sum += point;
@@ -208,39 +232,25 @@ namespace Assets.TheTimeAgency.Scripts
                     numOnLine++;
                 }
             }
-
+           
             return sum / counter;
         }
 
-        private KDTree<V3> CreateVector2KDTree(List<V3> pointList, ref bool fertig)
+        private KDTree<V3> CreateVector2KDTree(List<V3> pointList)
         {
             var kdTree = new KDTree<V3>(2);
-
-            int counter = 0;
 
             foreach (var point in pointList)
             {
                 if (!point.Examined)
                 {
-                    kdTree.AddPoint(new double[] { point.x, point.z }, point);
-                }
-                else
-                {
-                    counter++;
+                    kdTree.AddPoint(new double[] {point.x, point.z}, point);
                 }
             }
-
-            Debug.Log("counter: " + counter);
-
-            if (counter < 10)
-            {
-                fertig = true;
-            }
-
             return kdTree;
         }
 
-        private bool InReachToOutherAdvices(Vector3 point, float minDist = 0.5f)
+        private bool InReachToOutherAdvices(Vector3 point, float minDist)
         {
             bool inReach = false;
             foreach (var oldAdvice in _advicesList)
@@ -264,6 +274,30 @@ namespace Assets.TheTimeAgency.Scripts
         private void ShowAllInactiveCubes()
         {
 
+            Color color = Color.red;
+
+            Color colorUsed = Color.yellow;
+
+
+            foreach (var pointList in _pointDic.Values)
+            {
+
+                foreach (var point in pointList)
+                {
+                    if (!point.Examined)
+                    {
+
+                        GameObject advice = AddCube("placeholder" + point.x + "/" + point.y + "/" + point.z, point.Vec3,
+                            color, new Vector3(1, 1, 1));
+                    }
+
+                    else
+                    {
+                        GameObject advice = AddCube("placeholder" + point.x + "/" + point.y + "/" + point.z, point.Vec3,
+                            colorUsed, new Vector3(1, 1, 1));
+                    }
+                }
+            }
         }
 
         public void OnGUIState()
@@ -283,7 +317,7 @@ namespace Assets.TheTimeAgency.Scripts
             GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), string.Format("<size=30> {0} / {1} Aadvices added!</size>", _advicesList.Count, _crimeScene.m_numberAdvices));
         }
 
-        private GameObject AddCube(string name, Vector3 position, Color color)
+        private GameObject AddCube(string name, Vector3 position, Color color, Vector3 scale)
         {
             // copy of the maker
             GameObject cubeCopy = Object.Instantiate<GameObject>(_crimeScene.m_advice);
@@ -301,11 +335,13 @@ namespace Assets.TheTimeAgency.Scripts
 
             cubeCopy.transform.position = position;
 
+            cubeCopy.transform.localScale = scale;
+
             cubeCopy.GetComponent<Renderer>().material.color = color;
 
             cubeCopy.SetActive(true);
 
-            Debug.Log(string.Format("Cube {0} set on {1}", cubeCopy.name, cubeCopy.transform.position));
+           // Debug.Log(string.Format("Cube {0} set on {1}", cubeCopy.name, cubeCopy.transform.position));
 
             return cubeCopy;
         }
