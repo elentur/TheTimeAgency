@@ -129,33 +129,29 @@ namespace Assets.TheTimeAgency.Scripts
                 foreach (var y in _pointDic.Keys)
                 {
                     var pointList = _pointDic[y];
-                    var copyList = new List<V3>();
-
-                    foreach (var point in pointList)
-                    {
-                        if (!point.Examined)
-                        {
-                            copyList.Add(point);
-                        }
-                    }
 
                     Debug.Log("My Y: " + y);
 
-                    while (copyList.Count > 50)
+                    var i = 0;
+
+                    /*while (true)*/
                     {
+                        LaterBoolean myBoolean = new LaterBoolean();
 
-                        Debug.Log("copyList length: " + copyList.Count);
+                        KDTree<V3> pTree = CreateVector2KDTree(pointList);
 
-                        KDTree<V3> pTree = CreateVector2KDTree(copyList);
+                        Debug.Log("Durchläufe: " + i);
 
-                        var pIter = pTree.NearestNeighbors(new double[] { copyList[0].x, copyList[0].z }, copyList.Count, DISTANCE);
+                        //if (pTree.Size < 10 || i > 10) break;
+
+                        i++;
+
+                        var pIter = pTree.NearestNeighbors(new double[] { pointList[0].x, pointList[0].z }, pointList.Count, DISTANCE);
 
                         int counter = 0;
                         int numOnLine = 0;
 
-                        List<V3> temp = new List<V3>();
-
-                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine, copyList, temp);
+                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine, ref myBoolean);
 
                         if (counter < 100 || numOnLine * 1.0f / counter * 100.0f >= 80) continue;
 
@@ -163,7 +159,7 @@ namespace Assets.TheTimeAgency.Scripts
 
                         if (!outOfReach) continue;
 
-                        SetPointsExamined(pointList, temp);
+                        myBoolean.isTrue = true;
 
                         Color color = Random.ColorHSV();
 
@@ -188,21 +184,12 @@ namespace Assets.TheTimeAgency.Scripts
         
         }
 
-        private void SetPointsExamined(List<V3> pointList, List<V3> temp)
+        private void SetPointsExamined(LaterBoolean myBool)
         {
-            foreach (var v3 in temp)
-            {
-                var index = pointList.IndexOf(v3);
-                if (index > -1)
-                {
-                    var point = pointList[index];
-                    point.Examined = true;
-                    pointList[index] = point;
-                }
-            }
+            myBool.isTrue = true;
         }
 
-        private Vector3 CalcAverageOfArea(NearestNeighbour<V3> pIter, ref int counter, ref int numOnLine, List<V3> list, List<V3> temp)
+        private Vector3 CalcAverageOfArea(NearestNeighbour<V3> pIter, ref int counter, ref int numOnLine, ref LaterBoolean myBool)
         {
             Vector3 sum = Vector3.zero;
             Vector3 a = Vector3.zero;
@@ -212,8 +199,7 @@ namespace Assets.TheTimeAgency.Scripts
             {
                 var v3 = pIter.Current;
 
-                temp.Add(v3);
-                list.Remove(v3);
+                v3.Examined = myBool;
 
                 var point = v3.Vec3;
 
@@ -242,7 +228,7 @@ namespace Assets.TheTimeAgency.Scripts
 
             foreach (var point in pointList)
             {
-                if (!point.Examined)
+                if (!point.Examined.isTrue)
                 {
                     kdTree.AddPoint(new double[] {point.x, point.z}, point);
                 }
@@ -284,7 +270,7 @@ namespace Assets.TheTimeAgency.Scripts
 
                 foreach (var point in pointList)
                 {
-                    if (!point.Examined)
+                    if (!point.Examined.isTrue)
                     {
 
                         GameObject advice = AddCube("placeholder" + point.x + "/" + point.y + "/" + point.z, point.Vec3,

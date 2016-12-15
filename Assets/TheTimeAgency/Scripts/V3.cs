@@ -6,7 +6,7 @@ namespace Assets.TheTimeAgency.Scripts
     {
         public float x, y, z;
         public Vector3 Vec3;
-        public bool Examined;
+        public LaterBoolean Examined;
 
         public V3(Vector3 v3)
         {
@@ -14,7 +14,7 @@ namespace Assets.TheTimeAgency.Scripts
             x = Vec3.x;
             y = Vec3.y;
             z = Vec3.z;
-            Examined = false;
+            Examined = new LaterBoolean();
         }
     }
 }
