@@ -28,21 +28,24 @@ namespace Assets.TheTimeAgency.Scripts
 
         private float _maxX, _minX, _maxZ, _minZ;
 
-        private double Area;
+        private readonly SortedDictionary<float, List<Vector3>> _pointDic;
 
-        private readonly SortedDictionary<float, List<V3>> _pointDic;
+        private Camera cam;
+
+        private List<KeyValuePair<string, TimeSpan>> debugTime;
 
         public PingState(CrimeScene crimeScenePattern)
         {
             _crimeScene = crimeScenePattern;
             _advicesList = new List<GameObject>();
-            _pointDic = new SortedDictionary<float, List<V3>>();
+            _pointDic = new SortedDictionary<float, List<Vector3>>();
+            cam = Camera.main;
+            debugTime = new List<KeyValuePair<string, TimeSpan>>();
         }
 
         public void StartState()
         {
             SetMaxMin();
-            Area = _crimeScene.triangleList[0].Sureface() + _crimeScene.triangleList[1].Sureface();
         }
 
         private void SetMaxMin()
@@ -62,10 +65,34 @@ namespace Assets.TheTimeAgency.Scripts
             _minZ = zArray.Min();
         }
 
-        private static bool InfiniteCameraCanSeePoint(Vector3 point)
+        private bool InfiniteCameraCanSeePoint(Vector3 point)
         {
-            Vector3 viewportPoint = Camera.main.WorldToViewportPoint(point);
-            return (viewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint) && viewportPoint.z < Camera.main.farClipPlane);
+            Vector3 viewportPoint = cam.WorldToViewportPoint(point);
+            return (viewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint) && viewportPoint.z < cam.farClipPlane);
+        }
+
+        private readonly List<Plane[]> frustumsList = new List<Plane[]>();
+
+        private Plane[] _planes;
+
+        private readonly GameObject obj = new GameObject();
+
+        private bool IsInOlderFrustums(Vector3 point)
+        {
+
+            obj.transform.position = point;
+
+            BoxCollider bc = (BoxCollider)obj.gameObject.AddComponent(typeof(BoxCollider));
+            bc.center = Vector3.zero;
+
+            foreach (var frustumPlanes in frustumsList)
+            {
+                if (GeometryUtility.TestPlanesAABB(frustumPlanes, bc.bounds))
+                    return true;
+
+            }
+
+            return false;
         }
 
         private void PointCloudPointsInCameraView()
@@ -82,30 +109,38 @@ namespace Assets.TheTimeAgency.Scripts
                     if (InfiniteCameraCanSeePoint(point))
                     {
                         if (_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point))
-                        {
+                        { 
+                            //Debug.Log("is in older Frumstum: "+ IsInOlderFrustums(point));
+
                             // Group similar points into buckets based on sensitivity. 
                             float roundedY = Mathf.Round(point.y / SENSITIVITY) * SENSITIVITY;
 
                             if (!_pointDic.ContainsKey(roundedY))
                             {
-                                _pointDic.Add(roundedY, new List<V3>());
+                                _pointDic.Add(roundedY, new List<Vector3>());
                             }
 
-                            var v = new V3(point);
-                            if (!_pointDic[roundedY].Contains(v))
+                            if (!_pointDic[roundedY].Contains(point))
                             {
-                                _pointDic[roundedY].Add(v);
+                                _pointDic[roundedY].Add(point);
                             }
-
                         }
                     }
                 }
             }
 
+           /* _planes = GeometryUtility.CalculateFrustumPlanes(cam);
+
+            if (!frustumsList.Contains(_planes))
+            {
+                frustumsList.Add(_planes);
+            }*/
+
             stopwatch.Stop();
 
             // Write result.
-            Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed)); ;
+            debugTime.Add(new KeyValuePair<string, TimeSpan>("PointCloudPointsICameraView", stopwatch.Elapsed));
+            //Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed)); ;
         }
 
         public void UpdateState()
@@ -124,42 +159,30 @@ namespace Assets.TheTimeAgency.Scripts
 
                 PointCloudPointsInCameraView();
 
-                Debug.Log(string.Format("dic: {0}", _pointDic.Count));
+                //Debug.Log(string.Format("dic: {0}", _pointDic.Count));
    
-                foreach (var y in _pointDic.Keys)
+                foreach (var pointList in _pointDic.Values)
                 {
-                    var pointList = _pointDic[y];
-
-                    Debug.Log("My Y: " + y);
-
-                    var i = 0;
 
                     /*while (true)*/
                     {
-                        LaterBoolean myBoolean = new LaterBoolean();
-
-                        KDTree<V3> pTree = CreateVector2KDTree(pointList);
-
-                        Debug.Log("Durchläufe: " + i);
+         
+                        KDTree<Vector3> pTree = CreateVector2KDTree(pointList);
 
                         //if (pTree.Size < 10 || i > 10) break;
-
-                        i++;
 
                         var pIter = pTree.NearestNeighbors(new double[] { pointList[0].x, pointList[0].z }, pointList.Count, DISTANCE);
 
                         int counter = 0;
                         int numOnLine = 0;
 
-                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine, ref myBoolean);
+                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine);
 
                         if (counter < 100 || numOnLine * 1.0f / counter * 100.0f >= 80) continue;
 
                         bool outOfReach = !InReachToOutherAdvices(average, DISTANCE);
 
                         if (!outOfReach) continue;
-
-                        myBoolean.isTrue = true;
 
                         Color color = Random.ColorHSV();
 
@@ -173,7 +196,10 @@ namespace Assets.TheTimeAgency.Scripts
                 stopwatch.Stop();
 
                 // Write result.
-                Debug.Log(string.Format("Time elapsed for AdaptAdvicePlaceHolders: {0}", stopwatch.Elapsed));
+                debugTime.Add(new KeyValuePair<string, TimeSpan>("AdaptAdvicePlaceHolders", stopwatch.Elapsed));
+                //Debug.Log(string.Format("Time elapsed for AdaptAdvicePlaceHolders: {0}", stopwatch.Elapsed));
+
+               // ShowDebugTime();
             }
 
             if (m_show)
@@ -181,7 +207,16 @@ namespace Assets.TheTimeAgency.Scripts
                 ShowAllInactiveCubes();
                 m_show = false;
             }
-        
+        }
+
+        private void ShowDebugTime()
+        {
+
+            foreach (var time in debugTime)
+            {
+                Debug.Log(string.Format("Time elapsed for {0}: {1}",time.Key, time.Value));
+            }
+
         }
 
         private void SetPointsExamined(LaterBoolean myBool)
@@ -189,19 +224,20 @@ namespace Assets.TheTimeAgency.Scripts
             myBool.isTrue = true;
         }
 
-        private Vector3 CalcAverageOfArea(NearestNeighbour<V3> pIter, ref int counter, ref int numOnLine, ref LaterBoolean myBool)
+        private Vector3 CalcAverageOfArea(NearestNeighbour<Vector3> pIter, ref int counter, ref int numOnLine)
         {
+            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+
+            // Begin timing.
+            stopwatch.Start();
+
             Vector3 sum = Vector3.zero;
             Vector3 a = Vector3.zero;
             Vector3 b = Vector3.zero;
 
             while (pIter.MoveNext())
             {
-                var v3 = pIter.Current;
-
-                v3.Examined = myBool;
-
-                var point = v3.Vec3;
+                var point = pIter.Current;
 
                 sum += point;
 
@@ -218,21 +254,36 @@ namespace Assets.TheTimeAgency.Scripts
                     numOnLine++;
                 }
             }
-           
+
+            stopwatch.Stop();
+
+            // Write result.
+            debugTime.Add(new KeyValuePair<string, TimeSpan>("CalcAverageOfArea", stopwatch.Elapsed));
+            //Debug.Log(string.Format("Time elapsed for CalcAverageOfArea: {0}", stopwatch.Elapsed));
+
             return sum / counter;
         }
 
-        private KDTree<V3> CreateVector2KDTree(List<V3> pointList)
+        private KDTree<Vector3> CreateVector2KDTree(List<Vector3> pointList)
         {
-            var kdTree = new KDTree<V3>(2);
+            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+
+            // Begin timing.
+            stopwatch.Start();
+
+            var kdTree = new KDTree<Vector3>(2);
 
             foreach (var point in pointList)
             {
-                if (!point.Examined.isTrue)
-                {
-                    kdTree.AddPoint(new double[] {point.x, point.z}, point);
-                }
+                kdTree.AddPoint(new double[] {point.x, point.z}, point);
             }
+
+            stopwatch.Stop();
+
+            // Write result.
+            debugTime.Add(new KeyValuePair<string, TimeSpan>("CreateVector2KDTree", stopwatch.Elapsed));
+            // Debug.Log(string.Format("Time elapsed for CreateVector2KDTree: {0}", stopwatch.Elapsed));
+
             return kdTree;
         }
 
@@ -268,21 +319,6 @@ namespace Assets.TheTimeAgency.Scripts
             foreach (var pointList in _pointDic.Values)
             {
 
-                foreach (var point in pointList)
-                {
-                    if (!point.Examined.isTrue)
-                    {
-
-                        GameObject advice = AddCube("placeholder" + point.x + "/" + point.y + "/" + point.z, point.Vec3,
-                            color, new Vector3(1, 1, 1));
-                    }
-
-                    else
-                    {
-                        GameObject advice = AddCube("placeholder" + point.x + "/" + point.y + "/" + point.z, point.Vec3,
-                            colorUsed, new Vector3(1, 1, 1));
-                    }
-                }
             }
         }
 
