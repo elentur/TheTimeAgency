@@ -32,6 +32,8 @@ namespace Assets.TheTimeAgency.Scripts
 
         private Camera cam;
 
+        private readonly List<GameObject> camList;
+
         private List<KeyValuePair<string, TimeSpan>> debugTime;
 
         public PingState(CrimeScene crimeScenePattern)
@@ -41,6 +43,7 @@ namespace Assets.TheTimeAgency.Scripts
             _pointDic = new SortedDictionary<float, List<Vector3>>();
             cam = Camera.main;
             debugTime = new List<KeyValuePair<string, TimeSpan>>();
+            camList = new List<GameObject>();
         }
 
         public void StartState()
@@ -71,20 +74,16 @@ namespace Assets.TheTimeAgency.Scripts
             foreach (var myCam in camList)
             {
                 Vector3 myYiewportPoint = myCam.WorldToViewportPoint(point);
-                Debug.Log("is inolder Cam: " + (myYiewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(myYiewportPoint) && myYiewportPoint.z < cam.farClipPlane));
+               if((myYiewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(myYiewportPoint) && myYiewportPoint.z < cam.farClipPlane))
+               {
+                   return false;
+               }
+            
             }
 
             Vector3 viewportPoint = cam.WorldToViewportPoint(point);
             return (viewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint) && viewportPoint.z < cam.farClipPlane);
         }
-
-        private readonly List<Camera> camList = new List<Camera>();
-
-        private readonly List<Plane[]> frustumsList = new List<Plane[]>();
-
-        private Plane[] _planes;
-
-        private readonly GameObject obj = new GameObject();
 
         private void PointCloudPointsInCameraView()
         {
@@ -118,10 +117,16 @@ namespace Assets.TheTimeAgency.Scripts
                 }
             }
 
-            if (!camList.Contains(cam))
+
+            GameObject copyCam = new GameObject("camera2", Camera);
+            copyCam.GetComponent<Camera>().CopyFrom(cam);
+       
+            if (!camList.Contains(copyCam))
             {
-                camList.Add(cam);
+                camList.Add(copyCam);
             }
+
+            Debug.Log(string.Format("cams in list: {0}", camList.Count));
 
             stopwatch.Stop();
 
@@ -160,7 +165,7 @@ namespace Assets.TheTimeAgency.Scripts
 
                         var pIter = pTree.NearestNeighbors(new double[] { pointList[0].x, pointList[0].z }, pointList.Count, DISTANCE);
 
-                        int counter = 0;
+                        /*int counter = 0;
                         int numOnLine = 0;
 
                         Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine);
@@ -175,7 +180,7 @@ namespace Assets.TheTimeAgency.Scripts
 
                         GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average, color, new Vector3(10, 10, 10));
 
-                        _advicesList.Add(advice);
+                        _advicesList.Add(advice);*/
                    }
 
                 }
