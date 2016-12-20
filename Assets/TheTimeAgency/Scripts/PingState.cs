@@ -67,33 +67,24 @@ namespace Assets.TheTimeAgency.Scripts
 
         private bool InfiniteCameraCanSeePoint(Vector3 point)
         {
+
+            foreach (var myCam in camList)
+            {
+                Vector3 myYiewportPoint = myCam.WorldToViewportPoint(point);
+                Debug.Log("is inolder Cam: " + (myYiewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(myYiewportPoint) && myYiewportPoint.z < cam.farClipPlane));
+            }
+
             Vector3 viewportPoint = cam.WorldToViewportPoint(point);
             return (viewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint) && viewportPoint.z < cam.farClipPlane);
         }
+
+        private readonly List<Camera> camList = new List<Camera>();
 
         private readonly List<Plane[]> frustumsList = new List<Plane[]>();
 
         private Plane[] _planes;
 
         private readonly GameObject obj = new GameObject();
-
-        private bool IsInOlderFrustums(Vector3 point)
-        {
-
-            obj.transform.position = point;
-
-            BoxCollider bc = (BoxCollider)obj.gameObject.AddComponent(typeof(BoxCollider));
-            bc.center = Vector3.zero;
-
-            foreach (var frustumPlanes in frustumsList)
-            {
-                if (GeometryUtility.TestPlanesAABB(frustumPlanes, bc.bounds))
-                    return true;
-
-            }
-
-            return false;
-        }
 
         private void PointCloudPointsInCameraView()
         {
@@ -110,8 +101,6 @@ namespace Assets.TheTimeAgency.Scripts
                     {
                         if (_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point))
                         { 
-                            //Debug.Log("is in older Frumstum: "+ IsInOlderFrustums(point));
-
                             // Group similar points into buckets based on sensitivity. 
                             float roundedY = Mathf.Round(point.y / SENSITIVITY) * SENSITIVITY;
 
@@ -129,12 +118,10 @@ namespace Assets.TheTimeAgency.Scripts
                 }
             }
 
-           /* _planes = GeometryUtility.CalculateFrustumPlanes(cam);
-
-            if (!frustumsList.Contains(_planes))
+            if (!camList.Contains(cam))
             {
-                frustumsList.Add(_planes);
-            }*/
+                camList.Add(cam);
+            }
 
             stopwatch.Stop();
 
