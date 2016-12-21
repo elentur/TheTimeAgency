@@ -149,19 +149,25 @@ namespace Assets.TheTimeAgency.Scripts
 
                         KDTree<Vector3> pTree = CreateVector2KDTree(pointList);
 
-                        var pIter = pTree.NearestNeighbors(new double[] {pointList[0].x, pointList[0].z},
+                        var r = Random.Range(0, pointList.Count - 1);
+
+                        var pIter = pTree.NearestNeighbors(new double[] {pointList[r].x, pointList[r].z},
                             pointList.Count, DISTANCE);
 
                         int counter = 0;
                         int numOnLine = 0;
 
-                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine, ref pointList);
+                        List<Vector3> deltedPoints = new List<Vector3>();
 
-                        if (counter < 100 || numOnLine*1.0f/counter*100.0f >= 80) continue;
+                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine, ref deltedPoints);
+
+                        if (counter < 20 || numOnLine*1.0f/counter*100.0f >= 80) continue;
 
                         bool outOfReach = !InReachToOutherAdvices(average, DISTANCE);
 
                         if (!outOfReach) continue;
+
+                        pointList = pointList.Except(deltedPoints).ToList();
 
                         Color color = Random.ColorHSV();
 
@@ -200,7 +206,7 @@ namespace Assets.TheTimeAgency.Scripts
 
         }
 
-        private Vector3 CalcAverageOfArea(NearestNeighbour<Vector3> pIter, ref int counter, ref int numOnLine, ref List<Vector3> pointList)
+        private Vector3 CalcAverageOfArea(NearestNeighbour<Vector3> pIter, ref int counter, ref int numOnLine, ref List<Vector3> deletedPoints)
         {
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
@@ -215,7 +221,7 @@ namespace Assets.TheTimeAgency.Scripts
             {
                 var point = pIter.Current;
 
-                pointList.Remove(point);
+                deletedPoints.Add(point);
 
                 sum += point;
 
