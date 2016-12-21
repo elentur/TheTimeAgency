@@ -24,8 +24,6 @@ namespace Assets.TheTimeAgency.Scripts
 
         private readonly List<GameObject> _advicesList;
 
-        private float _maxX, _minX, _maxY, _maxZ, _minZ;
-
         private readonly SortedDictionary<float, List<Vector3>> _pointDic;
 
         private Camera cam;
@@ -46,27 +44,7 @@ namespace Assets.TheTimeAgency.Scripts
 
         public void StartState()
         {
-            SetMaxMin();
-        }
-
-        private void SetMaxMin()
-        {
-            var xArray = new float[_crimeScene.markerList.Count];
-            var yArray = new float[_crimeScene.markerList.Count];
-            var zArray = new float[_crimeScene.markerList.Count];
-
-            for (var i = 0; i < _crimeScene.markerList.Count; i++)
-            {
-                xArray[i] = _crimeScene.markerList[i].transform.position.x;
-                yArray[i] = _crimeScene.markerList[i].transform.position.y;
-                zArray[i] = _crimeScene.markerList[i].transform.position.z;
-            }
-
-            _maxX = xArray.Max();
-            _minX = xArray.Min();
-            _maxY = xArray.Max();
-            _maxZ = zArray.Max();
-            _minZ = zArray.Min();
+            
         }
 
         private bool InfiniteCameraCanSeePoint(Vector3 point)
@@ -94,7 +72,7 @@ namespace Assets.TheTimeAgency.Scripts
 
             foreach (Vector3 point in _crimeScene.m_pointCloud.m_points)
             {
-                if (point.x <= _maxX && point.x >= _minX && point.y >= _maxY && point.z <= _maxZ && point.z >= _minZ )
+                if (point.y <= 1.0f + _crimeScene.m_floorPoint.y)
                 {
                     if (_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point))
                     {

@@ -76,6 +76,8 @@ public class CrimeScene : MonoBehaviour
     [HideInInspector]
     public ICrimeSceneState currentState;
     [HideInInspector]
+    public FindFloorState findFloorState;
+    [HideInInspector]
     public MarkCrimeSceneState markCrimeSceneState;
     [HideInInspector]
     public SpreadAdviceState spreadAdviceState;
@@ -97,8 +99,11 @@ public class CrimeScene : MonoBehaviour
 
     public int m_numberAdvices = 8;
 
+    public Vector3 m_floorPoint;
+
     private void Awake()
     {
+        findFloorState = new FindFloorState(this);
         markCrimeSceneState = new MarkCrimeSceneState(this);
         spreadAdviceState = new SpreadAdviceState(this);
         pingState = new PingState(this);
@@ -117,7 +122,7 @@ public class CrimeScene : MonoBehaviour
         m_AdvicePlaceHolder.SetActive(false);
         m_advice.SetActive(false);
 
-        currentState = markCrimeSceneState;
+        currentState = findFloorState;
         currentState.StartState();
     }
 

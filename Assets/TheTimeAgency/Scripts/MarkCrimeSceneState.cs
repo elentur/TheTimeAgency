@@ -12,7 +12,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
     /// <summary>
     /// If <c>true</c>, floor finding is in progress.
     /// </summary>
-    private bool m_findingFloor = false;
+    private bool m_setMarker = false;
 
     private char pointName = 'A';
 
@@ -41,25 +41,11 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
        Vector3 p1 = Camera.main.transform.position + Camera.main.transform.forward * DISTANCE;
 
-        crimeScene.m_marker.transform.position = p1;
+        crimeScene.m_marker.transform.position = new Vector3(p1.x, 1.0f + crimeScene.m_floorPoint.y,p1.z);
 
         crimeScene.m_marker.SetActive(true);
 
-        if (!m_findingFloor) return;
-
-        // If the point cloud floor has found a new floor, place the marker at the found y position.
-        if (crimeScene.m_pointCloudFloor.m_floorFound && crimeScene.m_pointCloud.m_floorFound)
-        {
-
-            //Vector3 target = defaultMarker[crimeScene.markerList.Count];
-            Vector3 target = getFloorCoordinate();
-
-            crimeScene.m_marker.SetActive(false);
-
-            crimeScene.m_marker.transform.position = new Vector3(0,0,0);
-            crimeScene.m_marker.transform.parent.gameObject.transform.localRotation = Quaternion.identity;
-            crimeScene.m_marker.transform.parent.gameObject.transform.localPosition = Vector3.zero;
-            /*crimeScene.m_marker.transform.parent.gameObject.transform.localScale = Vector3.one;*/
+        if (!m_setMarker) return;
 
             // copy of the maker
             GameObject myMarker = Object.Instantiate(crimeScene.m_marker);
@@ -77,11 +63,6 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
             Vector3 p = Camera.main.transform.position + Camera.main.transform.forward * DISTANCE;
 
-            Debug.Log(p);
-            Debug.Log(target);
-
-            myMarker.transform.position = new Vector3(p.x, 1.0f + target.y, p.z);
-
         // Place the marker at the center of the screen at the found floor height.
 
         Vector3 position = myMarker.transform.position;
@@ -93,7 +74,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
             if (toClose)
             {
                 AndroidHelper.ShowAndroidToastMessage(string.Format("The distance to all other makers has to be {0}", crimeScene.m_distanceMarkers));
-                m_findingFloor = false;
+                m_setMarker = false;
                 Object.Destroy (myMarker);
                 return;
             }
@@ -109,7 +90,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
             if (isInside)
             {
                 AndroidHelper.ShowAndroidToastMessage("The marker can't be within the crime scine area!");
-                m_findingFloor = false;
+                m_setMarker = false;
                 Object.Destroy(myMarker);
                 return;
             }
@@ -137,7 +118,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
                 Triangle2D tri = crimeScene.triangleList[0];
                 crimeScene.triangleList.Add(tri.AdjacentTriangle(crimeScene.markerList[3].transform.position));
             }
-        }
+        
     }
 
     void ICrimeSceneState.OnGUIState()
@@ -146,7 +127,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
         if (crimeScene.markerList.Count >= crimeScene.m_numberMarkers)
         {
             AndroidHelper.ShowAndroidToastMessage(string.Format("Congratulations!!!!! All makers set!"));
-            m_findingFloor = false;
+            m_setMarker = false;
             // reset of the camera to leave out of the findFloor modus
             crimeScene.m_tangoApplication.SetDepthCameraRate(TangoEnums.TangoDepthCameraRate.MAXIMUM);
             crimeScene.m_marker.SetActive(false);
@@ -161,26 +142,12 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
         GUI.color = Color.white;
 
-        if (!m_findingFloor)
+        if (!m_setMarker)
         {
-            if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Find Floor</size>"))
+            if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Set Marker</size>"))
             {
-                if (crimeScene.m_pointCloud == null)
-                {
-                    Debug.LogError("TangoPointCloud required to find floor.");
-                    return;
-                }
-
-                m_findingFloor = true;
-                //m_marker.SetActive(false);
-                crimeScene.m_tangoApplication.SetDepthCameraRate(TangoEnums.TangoDepthCameraRate.MAXIMUM);
-                crimeScene.m_pointCloud.FindFloor();
+               m_setMarker = true;
             }
-        }
-        else
-        {
-            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
-                "<size=30>Searching for floor position. Make sure the floor is visible.</size>");
         }
     }
 
@@ -188,33 +155,6 @@ public class MarkCrimeSceneState : ICrimeSceneState
     {
         crimeScene.currentState = crimeScene.spreadAdviceState;
         crimeScene.currentState.StartState();
-    }
-
-    private Vector3 getFloorCoordinate()
-    {
-        Vector3 target;
-        RaycastHit hitInfo;
-
-        m_findingFloor = false;
-
-        if (Physics.Raycast(Camera.main.ScreenPointToRay(new Vector3(Screen.width/2.0f, Screen.height/2.0f)),
-            out hitInfo))
-        {
-            // Limit distance of the marker position from the camera to the camera's far clip plane. This makes sure that the marker
-            // is visible on screen when the floor is found.
-            Vector3 cameraBase = new Vector3(Camera.main.transform.position.x, hitInfo.point.y,
-                Camera.main.transform.position.z);
-            target = cameraBase + Vector3.ClampMagnitude(hitInfo.point - cameraBase, Camera.main.farClipPlane*0.9f);
-        }
-        else
-        {
-            // If no raycast hit, place marker in the camera's forward direction.
-            Vector3 dir = new Vector3(Camera.main.transform.forward.x, 0.0f, Camera.main.transform.forward.z);
-            target = dir.normalized*(Camera.main.farClipPlane*0.9f);
-            target.y = crimeScene.m_pointCloudFloor.transform.position.y;
-        }
-
-        return target;
     }
 
     private bool vec3ToClose(Vector3 target)
