@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using Assets.TheTimeAgency.Scripts.KDTree;
+using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
@@ -32,7 +33,7 @@ namespace Assets.TheTimeAgency.Scripts
 
         private Camera cam;
 
-        private readonly List<GameObject> camList;
+        private readonly List<Camera> camList;
 
         private List<KeyValuePair<string, TimeSpan>> debugTime;
 
@@ -43,7 +44,7 @@ namespace Assets.TheTimeAgency.Scripts
             _pointDic = new SortedDictionary<float, List<Vector3>>();
             cam = Camera.main;
             debugTime = new List<KeyValuePair<string, TimeSpan>>();
-            camList = new List<GameObject>();
+            camList = new List<Camera>();
         }
 
         public void StartState()
@@ -73,12 +74,11 @@ namespace Assets.TheTimeAgency.Scripts
 
             foreach (var myCam in camList)
             {
-                Vector3 myYiewportPoint = myCam.WorldToViewportPoint(point);
-               if((myYiewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(myYiewportPoint) && myYiewportPoint.z < cam.farClipPlane))
+               Vector3 myYiewportPoint = myCam.WorldToViewportPoint(point);
+               if((myYiewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(myYiewportPoint) && myYiewportPoint.z < myCam.farClipPlane))
                {
-                   return false;
+                    return false;
                }
-            
             }
 
             Vector3 viewportPoint = cam.WorldToViewportPoint(point);
@@ -96,10 +96,12 @@ namespace Assets.TheTimeAgency.Scripts
             {
                 if (point.x <= _maxX && point.x >= _minX && point.z <= _maxZ && point.z >= _minZ)
                 {
-                    if (InfiniteCameraCanSeePoint(point))
+                    if (_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point))
                     {
-                        if (_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point))
-                        { 
+
+                        if (InfiniteCameraCanSeePoint(point))
+                        {
+                       
                             // Group similar points into buckets based on sensitivity. 
                             float roundedY = Mathf.Round(point.y / SENSITIVITY) * SENSITIVITY;
 
@@ -117,16 +119,17 @@ namespace Assets.TheTimeAgency.Scripts
                 }
             }
 
-
-            GameObject copyCam = new GameObject("camera2", Camera);
-            copyCam.GetComponent<Camera>().CopyFrom(cam);
-       
-            if (!camList.Contains(copyCam))
+            if (!camList.Contains(cam))
             {
+                var cameraGameObject = new GameObject(cam.name);
+                var copyCam = cameraGameObject.AddComponent<Camera>();
+                copyCam.enabled = false;
+                copyCam.CopyFrom(cam);
+
                 camList.Add(copyCam);
             }
 
-            Debug.Log(string.Format("cams in list: {0}", camList.Count));
+            Debug.Log(string.Format("point dic : {0}", _pointDic.Count));
 
             stopwatch.Stop();
 
@@ -150,27 +153,29 @@ namespace Assets.TheTimeAgency.Scripts
                 m_ping = false;
 
                 PointCloudPointsInCameraView();
-
-                //Debug.Log(string.Format("dic: {0}", _pointDic.Count));
    
-                foreach (var pointList in _pointDic.Values)
+                foreach (var y in _pointDic.Keys)
                 {
 
-                    /*while (true)*/
+                    var pointList = _pointDic[y];
+
+                    int oldCount = Int32.MaxValue;
+
+                    while (pointList.Count > 0 && pointList.Count != oldCount)
                     {
-         
+                        oldCount = pointList.Count;
+
                         KDTree<Vector3> pTree = CreateVector2KDTree(pointList);
 
-                        //if (pTree.Size < 10 || i > 10) break;
+                        var pIter = pTree.NearestNeighbors(new double[] {pointList[0].x, pointList[0].z},
+                            pointList.Count, DISTANCE);
 
-                        var pIter = pTree.NearestNeighbors(new double[] { pointList[0].x, pointList[0].z }, pointList.Count, DISTANCE);
-
-                        /*int counter = 0;
+                        int counter = 0;
                         int numOnLine = 0;
 
-                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine);
+                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine, ref pointList);
 
-                        if (counter < 100 || numOnLine * 1.0f / counter * 100.0f >= 80) continue;
+                        if (counter < 100 || numOnLine*1.0f/counter*100.0f >= 80) continue;
 
                         bool outOfReach = !InReachToOutherAdvices(average, DISTANCE);
 
@@ -178,12 +183,14 @@ namespace Assets.TheTimeAgency.Scripts
 
                         Color color = Random.ColorHSV();
 
-                        GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average, color, new Vector3(10, 10, 10));
+                        GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average,
+                            color, new Vector3(10, 10, 10));
 
-                        _advicesList.Add(advice);*/
-                   }
-
+                        _advicesList.Add(advice);
+                    }
                 }
+
+                _pointDic.Clear();
 
                 stopwatch.Stop();
 
@@ -216,7 +223,7 @@ namespace Assets.TheTimeAgency.Scripts
             myBool.isTrue = true;
         }
 
-        private Vector3 CalcAverageOfArea(NearestNeighbour<Vector3> pIter, ref int counter, ref int numOnLine)
+        private Vector3 CalcAverageOfArea(NearestNeighbour<Vector3> pIter, ref int counter, ref int numOnLine, ref List<Vector3> pointList)
         {
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
@@ -230,6 +237,8 @@ namespace Assets.TheTimeAgency.Scripts
             while (pIter.MoveNext())
             {
                 var point = pIter.Current;
+
+                pointList.Remove(point);
 
                 sum += point;
 
