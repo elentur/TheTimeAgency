@@ -16,6 +16,8 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
     private char pointName = 'A';
 
+    private const float DISTANCE = 2.0f; 
+
     public MarkCrimeSceneState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
@@ -36,17 +38,28 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
     void ICrimeSceneState.UpdateState()
     {
-        if (!m_findingFloor)
-        {
-            return;
-        }
+
+       Vector3 p1 = Camera.main.transform.position + Camera.main.transform.forward * DISTANCE;
+
+        crimeScene.m_marker.transform.position = p1;
+
+        crimeScene.m_marker.SetActive(true);
+
+        if (!m_findingFloor) return;
 
         // If the point cloud floor has found a new floor, place the marker at the found y position.
         if (crimeScene.m_pointCloudFloor.m_floorFound && crimeScene.m_pointCloud.m_floorFound)
         {
 
-            Vector3 target = defaultMarker[crimeScene.markerList.Count];
-            //Vector3 target = getFloorCoordinate();
+            //Vector3 target = defaultMarker[crimeScene.markerList.Count];
+            Vector3 target = getFloorCoordinate();
+
+            crimeScene.m_marker.SetActive(false);
+
+            crimeScene.m_marker.transform.position = new Vector3(0,0,0);
+            crimeScene.m_marker.transform.parent.gameObject.transform.localRotation = Quaternion.identity;
+            crimeScene.m_marker.transform.parent.gameObject.transform.localPosition = Vector3.zero;
+            /*crimeScene.m_marker.transform.parent.gameObject.transform.localScale = Vector3.one;*/
 
             // copy of the maker
             GameObject myMarker = Object.Instantiate(crimeScene.m_marker);
@@ -61,10 +74,17 @@ public class MarkCrimeSceneState : ICrimeSceneState
             */
             myMarker.transform.SetParent(crimeScene.m_marker.transform.parent.gameObject.transform, false);
 
-            myMarker.transform.position = target;
-            // Place the marker at the center of the screen at the found floor height.
 
-            Vector3 position = myMarker.transform.position;
+            Vector3 p = Camera.main.transform.position + Camera.main.transform.forward * DISTANCE;
+
+            Debug.Log(p);
+            Debug.Log(target);
+
+            myMarker.transform.position = new Vector3(p.x, 1.0f + target.y, p.z);
+
+        // Place the marker at the center of the screen at the found floor height.
+
+        Vector3 position = myMarker.transform.position;
 
             bool toClose = vec3ToClose(position);
 
@@ -72,7 +92,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
             if (toClose)
             {
-                Debug.LogError("The distance to all other makers has to be " + crimeScene.m_distanceMarkers);
+                AndroidHelper.ShowAndroidToastMessage(string.Format("The distance to all other makers has to be {0}", crimeScene.m_distanceMarkers));
                 m_findingFloor = false;
                 Object.Destroy (myMarker);
                 return;
@@ -88,7 +108,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
             if (isInside)
             {
-                Debug.LogError("The marker can't be within the crime scine area!");
+                AndroidHelper.ShowAndroidToastMessage("The marker can't be within the crime scine area!");
                 m_findingFloor = false;
                 Object.Destroy(myMarker);
                 return;
@@ -125,18 +145,17 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
         if (crimeScene.markerList.Count >= crimeScene.m_numberMarkers)
         {
-            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
-                "<size=30>Congratulations!!!!! All makers set!</size>");
+            AndroidHelper.ShowAndroidToastMessage(string.Format("Congratulations!!!!! All makers set!"));
             m_findingFloor = false;
             // reset of the camera to leave out of the findFloor modus
             crimeScene.m_tangoApplication.SetDepthCameraRate(TangoEnums.TangoDepthCameraRate.MAXIMUM);
+            crimeScene.m_marker.SetActive(false);
             ToSpreadAdviceState();
             return;
         }
         else
         {
-            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
-                "<size=30>" + crimeScene.markerList.Count + "/" + crimeScene.m_numberMarkers + " makers set!</size>");
+            AndroidHelper.ShowAndroidToastMessage(string.Format("{0} / {1}  makers set!", crimeScene.markerList.Count, crimeScene.m_numberMarkers));
         }
 
 

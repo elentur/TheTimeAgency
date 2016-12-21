@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using Assets.TheTimeAgency.Scripts.KDTree;
-using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
@@ -27,7 +24,7 @@ namespace Assets.TheTimeAgency.Scripts
 
         private readonly List<GameObject> _advicesList;
 
-        private float _maxX, _minX, _maxZ, _minZ;
+        private float _maxX, _minX, _maxY, _maxZ, _minZ;
 
         private readonly SortedDictionary<float, List<Vector3>> _pointDic;
 
@@ -55,16 +52,19 @@ namespace Assets.TheTimeAgency.Scripts
         private void SetMaxMin()
         {
             var xArray = new float[_crimeScene.markerList.Count];
+            var yArray = new float[_crimeScene.markerList.Count];
             var zArray = new float[_crimeScene.markerList.Count];
 
             for (var i = 0; i < _crimeScene.markerList.Count; i++)
             {
                 xArray[i] = _crimeScene.markerList[i].transform.position.x;
+                yArray[i] = _crimeScene.markerList[i].transform.position.y;
                 zArray[i] = _crimeScene.markerList[i].transform.position.z;
             }
 
             _maxX = xArray.Max();
             _minX = xArray.Min();
+            _maxY = xArray.Max();
             _maxZ = zArray.Max();
             _minZ = zArray.Min();
         }
@@ -94,7 +94,7 @@ namespace Assets.TheTimeAgency.Scripts
 
             foreach (Vector3 point in _crimeScene.m_pointCloud.m_points)
             {
-                if (point.x <= _maxX && point.x >= _minX && point.z <= _maxZ && point.z >= _minZ)
+                if (point.x <= _maxX && point.x >= _minX && point.y >= _maxY && point.z <= _maxZ && point.z >= _minZ )
                 {
                     if (_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point))
                     {
@@ -216,11 +216,6 @@ namespace Assets.TheTimeAgency.Scripts
                 Debug.Log(string.Format("Time elapsed for {0}: {1}",time.Key, time.Value));
             }
 
-        }
-
-        private void SetPointsExamined(LaterBoolean myBool)
-        {
-            myBool.isTrue = true;
         }
 
         private Vector3 CalcAverageOfArea(NearestNeighbour<Vector3> pIter, ref int counter, ref int numOnLine, ref List<Vector3> pointList)
