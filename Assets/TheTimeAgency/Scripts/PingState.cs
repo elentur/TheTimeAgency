@@ -132,8 +132,12 @@ namespace Assets.TheTimeAgency.Scripts
 
                 PointCloudPointsInCameraView();
    
-                foreach (var y in _pointDic.Keys)
+                foreach (var dic in _pointDic.Reverse())
                 {
+
+                    var y = dic.Key;
+
+                    Debug.Log("my y: " + y);
 
                     var pointList = _pointDic[y];
 
