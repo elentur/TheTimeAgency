@@ -52,7 +52,6 @@ public class FindFloorState : ICrimeSceneState
                 }
 
                 m_findingFloor = true;
-                //m_marker.SetActive(false);
                 crimeScene.m_tangoApplication.SetDepthCameraRate(TangoEnums.TangoDepthCameraRate.MAXIMUM);
                 crimeScene.m_pointCloud.FindFloor();
             }
@@ -61,6 +60,8 @@ public class FindFloorState : ICrimeSceneState
         {
             GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50),
                 "<size=30>Searching for floor position. Make sure the floor is visible.</size>");
+            /*crimeScene.m_tangoApplication.SetDepthCameraRate(TangoEnums.TangoDepthCameraRate.MAXIMUM);
+            crimeScene.m_pointCloud.FindFloor();*/
         }
     }
 

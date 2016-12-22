@@ -12,7 +12,7 @@ namespace Assets.TheTimeAgency.Scripts
 
         public Triangle2D(Vector3 vec1, Vector3 vec2, Vector3 vec3)
         {
-            this._vecArray = new[] {vec1, vec2, vec3};
+            this._vecArray = new[] { vec1, vec2, vec3 };
 
             Vector3 p0 = _vecArray[0];
             Vector3 p1 = _vecArray[1];
@@ -71,7 +71,8 @@ namespace Assets.TheTimeAgency.Scripts
             {
                 first = _vecArray[0];
                 second = _vecArray[1];
-            }else if (beta > alpha && beta > gamma)
+            }
+            else if (beta > alpha && beta > gamma)
             {
                 first = _vecArray[0];
                 second = _vecArray[2];

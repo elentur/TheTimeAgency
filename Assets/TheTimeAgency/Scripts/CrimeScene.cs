@@ -101,6 +101,8 @@ public class CrimeScene : MonoBehaviour
 
     public Vector3 m_floorPoint;
 
+    public GameObject makersBox;
+
     private void Awake()
     {
         findFloorState = new FindFloorState(this);
@@ -144,7 +146,7 @@ public class CrimeScene : MonoBehaviour
     /// </summary>
     public void OnGUI()
     {
-       currentState.OnGUIState();
+        currentState.OnGUIState();
     }
 
     /// <summary>
@@ -157,9 +159,9 @@ public class CrimeScene : MonoBehaviour
         {
             // When application is backgrounded, we reload the level because the Tango Service is disconected. All
             // learned area and placed marker should be discarded as they are not saved.
-            #pragma warning disable 618
+#pragma warning disable 618
             Application.LoadLevel(Application.loadedLevel);
-            #pragma warning restore 618
+#pragma warning restore 618
         }
     }
 }
