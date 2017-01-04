@@ -1,8 +1,9 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using Assets.TheTimeAgency.Scripts;
-using Tango;
+using Object = UnityEngine.Object;
 
 public class MarkCrimeSceneState : ICrimeSceneState
 {
@@ -14,11 +15,26 @@ public class MarkCrimeSceneState : ICrimeSceneState
     /// </summary>
     private bool m_setMarker = false, m_resetMarkers = false, m_defaultMarkers= false;
 
-    private char pointName = 'A';
+    private char _pointName = 'A';
 
     private const float DISTANCE = 2.0f;
 
-    public GameObject makersBox;
+    public GameObject MakersBox;
+
+    public List<Vector3> Vertices = new List<Vector3>();
+
+    private Vector3[] defaultVertces = new[]
+    {
+        /*new Vector3(1f, -1.300f, 2f),
+        new Vector3(2f, -1.300f, -1f),
+        new Vector3(-1f, -1.300f, -2f),
+        new Vector3(-3f, -1.300f, 3f),*/
+
+        new Vector3(0.8f, -0.3f, 3.9f),
+        new Vector3(1.7f, -0.3f, 0.29f),
+        new Vector3(-1.6f, -0.3f, -0.7f),
+        new Vector3(-2.9f, -0.3f, 1.6f)
+    };
 
     public MarkCrimeSceneState(CrimeScene crimeScenePattern)
     {
@@ -29,32 +45,14 @@ public class MarkCrimeSceneState : ICrimeSceneState
     {
         //  throw new System.NotImplementedException();
 
-        makersBox = new GameObject("makersBox");
-        makersBox.transform.SetParent(_crimeScene.m_marker.transform.parent.gameObject.transform, false);
+        MakersBox = new GameObject("makersBox");
+        MakersBox.transform.SetParent(_crimeScene.m_marker.transform.parent.gameObject.transform, false);
     }
 
     void ICrimeSceneState.UpdateState()
     {
 
-        if (m_defaultMarkers)
-        {
-
-            m_defaultMarkers = false;
-        }
-
-
-        if (m_resetMarkers)
-        {
-            _crimeScene.triangleList.Clear();
-            _crimeScene.markerList.Clear();
-    
-            foreach (Transform child in makersBox.transform)
-            {
-                Object.Destroy(child.gameObject);
-            }
-
-            m_resetMarkers = false;
-        }
+        if (m_resetMarkers) ResetMarkers();
 
         Vector3 p1 = Camera.main.transform.position + Camera.main.transform.forward * DISTANCE;
 
@@ -62,28 +60,15 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
         _crimeScene.m_marker.SetActive(true);
 
+        if (m_defaultMarkers) SetDefaultMarker();
 
+        if (m_setMarker) SetMarker(_crimeScene.m_marker.transform.position);
+    }
 
-        if (!m_setMarker) return;
+    private void SetMarker(Vector3 position)
+    {
 
-        // copy of the maker
-        GameObject myMarker = Object.Instantiate(_crimeScene.m_marker);
-
-        myMarker.name = pointName.ToString();
-
-        pointName++;
-
-        /*
-         * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
-         * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
-        */
-        myMarker.transform.SetParent(makersBox.transform, false);
-
-        Vector3 p = Camera.main.transform.position + Camera.main.transform.forward * DISTANCE;
-
-        // Place the marker at the center of the screen at the found floor height.
-
-        Vector3 position = myMarker.transform.position;
+        m_setMarker = false;
 
         bool toClose = vec3ToClose(position);
 
@@ -92,8 +77,6 @@ public class MarkCrimeSceneState : ICrimeSceneState
         if (toClose)
         {
             AndroidHelper.ShowAndroidToastMessage(string.Format("The distance to all other makers has to be {0}", _crimeScene.m_distanceMarkers));
-            m_setMarker = false;
-            Object.Destroy(myMarker);
             return;
         }
 
@@ -108,52 +91,90 @@ public class MarkCrimeSceneState : ICrimeSceneState
         if (isInside)
         {
             AndroidHelper.ShowAndroidToastMessage("The marker can't be within the crime scine area!");
-            m_setMarker = false;
-            Object.Destroy(myMarker);
             return;
         }
 
-        Debug.Log(string.Format("Marker set on {0}", myMarker.transform.position));
+        AddMarker(position);
 
-        myMarker.SetActive(true);
-        AndroidHelper.ShowAndroidToastMessage(string.Format("Floor found. Unity world height = {0}",
-            _crimeScene.m_pointCloudFloor.transform.position.y.ToString()));
+        Vertices.Add(position);
 
-        _crimeScene.markerList.Add(myMarker);
+        Debug.Log(string.Format("triangleList is empty {0} ", !_crimeScene.triangleList.Any()));
+        Debug.Log(string.Format("Vertices {0} ", Vertices.Count));
 
-        if (_crimeScene.markerList.Count == 3)
+        if (!_crimeScene.triangleList.Any() && Vertices.Count > 2)
         {
-
             Triangle2D tri = new Triangle2D(
-                _crimeScene.markerList[0].transform.position,
-                _crimeScene.markerList[1].transform.position,
-                _crimeScene.markerList[2].transform.position
+                Vertices[0],
+                Vertices[1],
+                Vertices[2]
             );
 
             _crimeScene.triangleList.Add(tri);
         }
 
-        if (_crimeScene.markerList.Count > 3)
+        if (Vertices.Count > 3)
         {
-            Triangle2D tri = _crimeScene.triangleList[0];
-            _crimeScene.triangleList.Add(tri.AdjacentTriangle(_crimeScene.markerList[3].transform.position));
+            Triangle2D tri = _crimeScene.triangleList[_crimeScene.triangleList.Count - 1];
+            _crimeScene.triangleList.Add(tri.AdjacentTriangle(Vertices[3]));
+        }
+    }
+
+    private void AddMarker(Vector3 position)
+    {
+        // copy of the maker
+        GameObject myMarker = Object.Instantiate(_crimeScene.m_marker);
+
+        myMarker.name = _pointName.ToString();
+
+        _pointName++;
+
+        /*
+         * Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation. 
+         * http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
+        */
+        myMarker.transform.SetParent(MakersBox.transform, false);
+
+        myMarker.transform.position = position;
+
+        myMarker.SetActive(true);
+    }
+
+    private void ResetMarkers()
+    {
+        _crimeScene.triangleList.Clear();
+        Vertices.Clear();
+
+        foreach (Transform child in MakersBox.transform)
+        {
+            Object.Destroy(child.gameObject);
         }
 
+        m_resetMarkers = false;
+    }
+
+    private void SetDefaultMarker()
+    {
+        foreach (var vertice in defaultVertces)
+        {
+            SetMarker(vertice);
+        }
+        m_defaultMarkers = false;
     }
 
     void ICrimeSceneState.OnGUIState()
     {
 
-        if (_crimeScene.markerList.Count >= _crimeScene.m_numberMarkers)
+        if (Vertices.Count >= _crimeScene.m_numberMarkers)
         {
             AndroidHelper.ShowAndroidToastMessage(string.Format("Congratulations!!!!! All makers set!"));
             m_setMarker = false;
+            _crimeScene.m_marker.SetActive(false);
             ToPingState();
             return;
         }
         else
         {
-            AndroidHelper.ShowAndroidToastMessage(string.Format("{0} / {1}  makers set!", _crimeScene.markerList.Count, _crimeScene.m_numberMarkers));
+            AndroidHelper.ShowAndroidToastMessage(string.Format("{0} / {1}  makers set!", Vertices.Count, _crimeScene.m_numberMarkers));
         }
 
 
@@ -186,16 +207,19 @@ public class MarkCrimeSceneState : ICrimeSceneState
     {
         bool toClose = false;
 
-        foreach (GameObject marker in _crimeScene.markerList)
+        foreach (Triangle2D triangle in _crimeScene.triangleList)
         {
-            float distSqr = Vector3.SqrMagnitude(
-                new Vector2(marker.transform.position.x, marker.transform.position.z) - new Vector2(target.x, target.z)
+            foreach (Vector3 vertice in triangle.GetVertices())
+            {
+                float distSqr = Vector3.SqrMagnitude(
+                    new Vector2(vertice.x, vertice.z) - new Vector2(target.x, target.z)
                 );
 
-            if (distSqr < _crimeScene.m_distanceMarkers * _crimeScene.m_distanceMarkers)
-            {
-                toClose = true;
-                break;
+                if (distSqr < _crimeScene.m_distanceMarkers*_crimeScene.m_distanceMarkers)
+                {
+                    toClose = true;
+                    break;
+                }
             }
         }
 

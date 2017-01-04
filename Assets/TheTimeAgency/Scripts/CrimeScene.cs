@@ -80,12 +80,7 @@ public class CrimeScene : MonoBehaviour
     [HideInInspector]
     public MarkCrimeSceneState markCrimeSceneState;
     [HideInInspector]
-    public SpreadAdviceState spreadAdviceState;
-    [HideInInspector]
     public PingState pingState;
-
-    [HideInInspector]
-    public List<GameObject> markerList = new List<GameObject>();
 
     [HideInInspector]
     public List<Triangle2D> triangleList = new List<Triangle2D>();
@@ -107,7 +102,6 @@ public class CrimeScene : MonoBehaviour
     {
         findFloorState = new FindFloorState(this);
         markCrimeSceneState = new MarkCrimeSceneState(this);
-        spreadAdviceState = new SpreadAdviceState(this);
         pingState = new PingState(this);
     }
 
@@ -137,8 +131,6 @@ public class CrimeScene : MonoBehaviour
         {
             Application.Quit();
         }
-
-        Debug.Log("Mouse: " + Input.mousePosition.ToString());
 
         currentState.UpdateState();
     }

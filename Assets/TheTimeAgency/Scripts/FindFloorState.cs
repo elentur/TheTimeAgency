@@ -29,8 +29,6 @@ public class FindFloorState : ICrimeSceneState
         // If the point cloud floor has found a new floor, place the marker at the found y position.
         if (crimeScene.m_pointCloudFloor.m_floorFound && crimeScene.m_pointCloud.m_floorFound)
         {
-
-            //Vector3 target = defaultMarker[crimeScene.markerList.Count];
             crimeScene.m_floorPoint = getFloorCoordinate();
             crimeScene.m_tangoApplication.SetDepthCameraRate(TangoEnums.TangoDepthCameraRate.MAXIMUM);
             crimeScene.m_pointCloud.FindFloor();
@@ -43,7 +41,7 @@ public class FindFloorState : ICrimeSceneState
     {
         if (!m_findingFloor)
         {
-            if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Find Floor</size>"))
+            //if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Find Floor</size>"))
             {
                 if (crimeScene.m_pointCloud == null)
                 {

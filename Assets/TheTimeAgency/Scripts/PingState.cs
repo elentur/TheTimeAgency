@@ -79,7 +79,6 @@ namespace Assets.TheTimeAgency.Scripts
                 {
                     if (_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point))
                     {
-
                         if (InfiniteCameraCanSeePoint(point))
                         {
 
@@ -253,7 +252,7 @@ namespace Assets.TheTimeAgency.Scripts
                     numOnLine++;
                 }
 
-                SetCube(point, color);
+                //SetCube(point, color);
             }
 
             stopwatch.Stop();
