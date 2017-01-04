@@ -138,6 +138,8 @@ public class CrimeScene : MonoBehaviour
             Application.Quit();
         }
 
+        Debug.Log("Mouse: " + Input.mousePosition.ToString());
+
         currentState.UpdateState();
     }
 
