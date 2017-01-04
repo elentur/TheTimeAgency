@@ -16,7 +16,7 @@ namespace Assets.TheTimeAgency.Scripts
         /// The interval in meters between buckets of points. For example, a high sensitivity of 0.01 will group 
         /// points into buckets every 1cm.
         /// </summary>
-        private const float SENSITIVITY = 0.002f;
+        private const float SENSITIVITY = 0.02f;
 
         private const float DISTANCE = 0.5f;
 
@@ -50,9 +50,8 @@ namespace Assets.TheTimeAgency.Scripts
             pingBox.transform.SetParent(_crimeScene.m_AdvicePlaceHolder.transform.parent.gameObject.transform, false);
         }
 
-        private bool InfiniteCameraCanSeePoint(Vector3 point)
+        private bool IsNotInOlderDirectionOfSight(Vector3 point)
         {
-
             foreach (var myCam in camList)
             {
                 Vector3 myYiewportPoint = myCam.WorldToViewportPoint(point);
@@ -62,6 +61,11 @@ namespace Assets.TheTimeAgency.Scripts
                 }
             }
 
+            return true;
+        }
+
+        private bool InfiniteCameraCanSeePoint(Vector3 point)
+        {
             Vector3 viewportPoint = cam.WorldToViewportPoint(point);
             return (viewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint) && viewportPoint.z < cam.farClipPlane);
         }
@@ -79,9 +83,8 @@ namespace Assets.TheTimeAgency.Scripts
                 {
                     if (_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point))
                     {
-                        if (InfiniteCameraCanSeePoint(point))
+                        if (InfiniteCameraCanSeePoint(point) && IsNotInOlderDirectionOfSight(point))
                         {
-
                             // Group similar points into buckets based on sensitivity. 
                             float roundedY = Mathf.Round(point.y / SENSITIVITY) * SENSITIVITY;
 
@@ -94,6 +97,8 @@ namespace Assets.TheTimeAgency.Scripts
                             {
                                 _pointDic[roundedY].Add(point);
                             }
+
+                            SetCube(point,Color.red);
                         }
                     }
                 }
@@ -153,14 +158,16 @@ namespace Assets.TheTimeAgency.Scripts
 
                 PointCloudPointsInCameraView();
 
+                var oldAdvices = 0;
+
                 foreach (var dic in _pointDic.Reverse())
                 {
                     var y = dic.Key;
-
-                    //Debug.Log("my y: " + y);
-
                     var pointList = _pointDic[y];
                     int oldCount = Int32.MaxValue;
+
+                    //Debug.Log("my y: " + y);
+                    //Debug.Log("pointList: " + pointList.Count);
 
                     while (pointList.Count > 0 && pointList.Count != oldCount)
                     {
@@ -191,11 +198,20 @@ namespace Assets.TheTimeAgency.Scripts
 
                         pointList = pointList.Except(deltedPoints).ToList();
 
-                        GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average,
+                       GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average,
                             color, new Vector3(10, 10, 10));
 
                         _advicesList.Add(advice);
                     }
+
+                    //Debug.Log("advices: " + (_advicesList.Count - oldAdvices));
+
+                    //foreach (var advice in _advicesList)
+                    {
+                        //Debug.Log("advice: " + advice.transform.position);
+                    }
+
+                    oldAdvices = _advicesList.Count;
                 }
 
                 leftOver = new SortedDictionary<float, List<Vector3>>(_pointDic); 
@@ -252,7 +268,7 @@ namespace Assets.TheTimeAgency.Scripts
                     numOnLine++;
                 }
 
-                //SetCube(point, color);
+                //SetCube(point, color, 0.2f);
             }
 
             stopwatch.Stop();
@@ -324,12 +340,12 @@ namespace Assets.TheTimeAgency.Scripts
             }
         }
 
-        private void SetCube(Vector3 point, Color color)
+        private void SetCube(Vector3 point, Color color, float scale = 0)
         {
             GameObject sphere = Object.Instantiate<GameObject>(_crimeScene.m_marker);
             sphere.transform.SetParent(pingBox.transform, false);
             sphere.transform.position = point;
-            sphere.transform.localScale = new Vector3(1, 1, 1);
+            sphere.transform.localScale = new Vector3(1 + scale, 1 + scale, 1 + scale);
             sphere.GetComponent<Renderer>().material.color = color;
             sphere.SetActive(true);
         }

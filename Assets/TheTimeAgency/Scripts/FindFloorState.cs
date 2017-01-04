@@ -41,7 +41,7 @@ public class FindFloorState : ICrimeSceneState
     {
         if (!m_findingFloor)
         {
-            //if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Find Floor</size>"))
+            if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Find Floor</size>"))
             {
                 if (crimeScene.m_pointCloud == null)
                 {

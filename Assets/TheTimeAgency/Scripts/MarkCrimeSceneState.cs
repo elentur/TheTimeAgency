@@ -98,9 +98,6 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
         Vertices.Add(position);
 
-        Debug.Log(string.Format("triangleList is empty {0} ", !_crimeScene.triangleList.Any()));
-        Debug.Log(string.Format("Vertices {0} ", Vertices.Count));
-
         if (!_crimeScene.triangleList.Any() && Vertices.Count > 2)
         {
             Triangle2D tri = new Triangle2D(
