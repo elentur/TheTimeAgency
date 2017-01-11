@@ -112,7 +112,7 @@ namespace Assets.TheTimeAgency.Scripts
                 }
             }
 
-            if (!camList.Contains(cam))
+            /*if (!camList.Contains(cam))
             {
                 var cameraGameObject = new GameObject(cam.name);
                 var copyCam = cameraGameObject.AddComponent<Camera>();
@@ -120,7 +120,7 @@ namespace Assets.TheTimeAgency.Scripts
                 copyCam.CopyFrom(cam);
 
                 camList.Add(copyCam);
-            }
+            }*/
 
             Debug.Log(string.Format("point dic : {0}", _pointDic.Count));
 
@@ -181,16 +181,17 @@ namespace Assets.TheTimeAgency.Scripts
                 {
 
              
-                    if (!advices.activeSelf &&  InfiniteCameraCanSeePoint(advices.transform.position))
+                    if (/*!advices.activeSelf &&*/  InfiniteCameraCanSeePoint(advices.transform.position))
                     {
-                        var pIter = pTree.NearestNeighbors(new double[] { advices.transform.position.x, advices.transform.position.z }, 1, 0.01);
+                        var pIter = pTree.NearestNeighbors(new double[] { advices.transform.position.x, advices.transform.position.z }, 1, 0.1);
                       
                         pIter.MoveNext();
                         Debug.Log("current: " + pIter.Current);
+                        AndroidHelper.ShowAndroidToastMessage(string.Format("Neue Koordinate {0}", pIter.Current), AndroidHelper.ToastLength.SHORT);
                         if (pIter.Current != Vector3.zero)
                         {
-                           advices.transform.position = pIter.Current;
-                            advices.SetActive(true);
+                            advices.transform.position = pIter.Current;
+                         //   advices.SetActive(true);
                         }
 
                     }
@@ -436,7 +437,7 @@ namespace Assets.TheTimeAgency.Scripts
 
             cubeCopy.GetComponent<Renderer>().material.color = color;
 
-            cubeCopy.SetActive(false);
+            cubeCopy.SetActive(true);
 
             // Debug.Log(string.Format("Cube {0} set on {1}", cubeCopy.name, cubeCopy.transform.position));
 

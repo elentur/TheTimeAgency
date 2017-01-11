@@ -31,7 +31,7 @@ public class FindFloorState : ICrimeSceneState
         {
             crimeScene.m_floorPoint = getFloorCoordinate();
             crimeScene.m_tangoApplication.SetDepthCameraRate(TangoEnums.TangoDepthCameraRate.MAXIMUM);
-            crimeScene.m_pointCloud.FindFloor();
+            //crimeScene.m_pointCloud.FindFloor();
             ToMarkCrimeSceneState();
             return;
         }

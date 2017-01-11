@@ -173,7 +173,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
         }
         else
         {
-            AndroidHelper.ShowAndroidToastMessage(string.Format("{0} / {1}  makers set!", Vertices.Count, _crimeScene.m_numberMarkers));
+            //AndroidHelper.ShowAndroidToastMessage(string.Format("{0} / {1}  makers set!", Vertices.Count, _crimeScene.m_numberMarkers));
         }
 
 
