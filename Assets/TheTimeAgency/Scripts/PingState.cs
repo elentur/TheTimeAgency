@@ -48,6 +48,13 @@ namespace Assets.TheTimeAgency.Scripts
         {
             pingBox = new GameObject("pingBox");
             pingBox.transform.SetParent(_crimeScene.m_AdvicePlaceHolder.transform.parent.gameObject.transform, false);
+
+            Color color = Color.red; 
+
+            foreach (var vec in _crimeScene.m_defaultAdvices) {
+                GameObject advice = AddCube("advice_" + vec.x + "/" + vec.y + "/" + vec.z, vec, color, new Vector3(10, 10, 10));
+                _advicesList.Add(advice);
+            }
         }
 
         private bool IsNotInOlderDirectionOfSight(Vector3 point)
@@ -77,6 +84,7 @@ namespace Assets.TheTimeAgency.Scripts
             // Begin timing.
             stopwatch.Start();
 
+            Debug.Log("Points: " + _crimeScene.m_pointCloud.m_points.Count());
             foreach (Vector3 point in _crimeScene.m_pointCloud.m_points)
             {
                 if (point.y <= 1.0f + _crimeScene.m_floorPoint.y)
@@ -98,7 +106,7 @@ namespace Assets.TheTimeAgency.Scripts
                                 _pointDic[roundedY].Add(point);
                             }
 
-                            SetCube(point,Color.red);
+                           // SetCube(point,Color.red);
                         }
                     }
                 }
@@ -119,8 +127,8 @@ namespace Assets.TheTimeAgency.Scripts
             stopwatch.Stop();
 
             // Write result.
-            debugTime.Add(new KeyValuePair<string, TimeSpan>("PointCloudPointsICameraView", stopwatch.Elapsed));
-            //Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed)); ;
+            //debugTime.Add(new KeyValuePair<string, TimeSpan>("PointCloudPointsICameraView", stopwatch.Elapsed));
+            Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed)); ;
         }
 
         private SortedDictionary<float, List<Vector3>> leftOver = new SortedDictionary<float, List<Vector3>>();
@@ -156,6 +164,39 @@ namespace Assets.TheTimeAgency.Scripts
                 // Begin timing.
                 stopwatch.Start();
 
+                List<Vector3> pointList = new List<Vector3>();
+                
+                foreach (var point in _crimeScene.m_pointCloud.m_points)
+                {
+
+
+                    if ((_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point)) && InfiniteCameraCanSeePoint(point))
+                    {
+                        pointList.Add(point);
+                    }
+                }
+                KDTree<Vector3> pTree = CreateVector2KDTree(pointList);
+                Debug.Log(pTree.Size);
+                foreach (var advices in _advicesList)
+                {
+
+             
+                    if (!advices.activeSelf &&  InfiniteCameraCanSeePoint(advices.transform.position))
+                    {
+                        var pIter = pTree.NearestNeighbors(new double[] { advices.transform.position.x, advices.transform.position.z }, 1, 0.01);
+                      
+                        pIter.MoveNext();
+                        Debug.Log("current: " + pIter.Current);
+                        if (pIter.Current != Vector3.zero)
+                        {
+                           advices.transform.position = pIter.Current;
+                            advices.SetActive(true);
+                        }
+
+                    }
+                }
+
+                /*
                 PointCloudPointsInCameraView();
 
                 var oldAdvices = 0;
@@ -167,7 +208,7 @@ namespace Assets.TheTimeAgency.Scripts
                     int oldCount = Int32.MaxValue;
 
                     //Debug.Log("my y: " + y);
-                    //Debug.Log("pointList: " + pointList.Count);
+                    Debug.Log("pointList: " + pointList.Count);
 
                     while (pointList.Count > 0 && pointList.Count != oldCount)
                     {
@@ -216,13 +257,14 @@ namespace Assets.TheTimeAgency.Scripts
 
                 leftOver = new SortedDictionary<float, List<Vector3>>(_pointDic); 
 
-                _pointDic.Clear();
+                _pointDic.Clear();*/
 
                 stopwatch.Stop();
 
                 // Write result.
-                debugTime.Add(new KeyValuePair<string, TimeSpan>("AdaptAdvicePlaceHolders", stopwatch.Elapsed));
-                // ShowDebugTime();
+                // debugTime.Add(new KeyValuePair<string, TimeSpan>("AdaptAdvicePlaceHolders", stopwatch.Elapsed));
+                //ShowDebugTime();
+                Debug.Log(string.Format("Time: {0}", stopwatch.Elapsed));
             }
         }
 
@@ -274,7 +316,7 @@ namespace Assets.TheTimeAgency.Scripts
             stopwatch.Stop();
 
             // Write result.
-            debugTime.Add(new KeyValuePair<string, TimeSpan>("CalcAverageOfArea", stopwatch.Elapsed));
+           // debugTime.Add(new KeyValuePair<string, TimeSpan>("CalcAverageOfArea", stopwatch.Elapsed));
             //Debug.Log(string.Format("Time elapsed for CalcAverageOfArea: {0}", stopwatch.Elapsed));
 
             return sum / counter;
@@ -297,7 +339,7 @@ namespace Assets.TheTimeAgency.Scripts
             stopwatch.Stop();
 
             // Write result.
-            debugTime.Add(new KeyValuePair<string, TimeSpan>("CreateVector2KDTree", stopwatch.Elapsed));
+            //debugTime.Add(new KeyValuePair<string, TimeSpan>("CreateVector2KDTree", stopwatch.Elapsed));
             // Debug.Log(string.Format("Time elapsed for CreateVector2KDTree: {0}", stopwatch.Elapsed));
 
             return kdTree;
@@ -342,7 +384,7 @@ namespace Assets.TheTimeAgency.Scripts
 
         private void SetCube(Vector3 point, Color color, float scale = 0)
         {
-            GameObject sphere = Object.Instantiate<GameObject>(_crimeScene.m_marker);
+            GameObject sphere = Object.Instantiate<GameObject>(_crimeScene.m_advice);
             sphere.transform.SetParent(pingBox.transform, false);
             sphere.transform.position = point;
             sphere.transform.localScale = new Vector3(1 + scale, 1 + scale, 1 + scale);
@@ -394,7 +436,7 @@ namespace Assets.TheTimeAgency.Scripts
 
             cubeCopy.GetComponent<Renderer>().material.color = color;
 
-            cubeCopy.SetActive(true);
+            cubeCopy.SetActive(false);
 
             // Debug.Log(string.Format("Cube {0} set on {1}", cubeCopy.name, cubeCopy.transform.position));
 

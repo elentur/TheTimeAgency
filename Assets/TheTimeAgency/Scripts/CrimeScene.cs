@@ -98,6 +98,9 @@ public class CrimeScene : MonoBehaviour
 
     public GameObject makersBox;
 
+    [HideInInspector]
+    public List<Vector3> m_defaultAdvices = new List<Vector3>();
+
     private void Awake()
     {
         findFloorState = new FindFloorState(this);

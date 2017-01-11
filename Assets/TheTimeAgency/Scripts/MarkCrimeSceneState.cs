@@ -166,6 +166,8 @@ public class MarkCrimeSceneState : ICrimeSceneState
             AndroidHelper.ShowAndroidToastMessage(string.Format("Congratulations!!!!! All makers set!"));
             m_setMarker = false;
             _crimeScene.m_marker.SetActive(false);
+            SetRandomAdvices();
+
             ToPingState();
             return;
         }
@@ -191,6 +193,29 @@ public class MarkCrimeSceneState : ICrimeSceneState
         if (!m_defaultMarkers)
         {
             if (GUI.Button(new Rect(Screen.width - 240, 220, 220, 80), "<size=30>Default Marker</size>")) m_defaultMarkers = true;
+        }
+    }
+
+    private void SetRandomAdvices() {
+
+        var maxX = Math.Max(Vertices[0].x, Math.Max(Vertices[1].x, Math.Max(Vertices[2].x, Vertices[3].x)));
+        var minX = Math.Min(Vertices[0].x, Math.Min(Vertices[1].x, Math.Min(Vertices[2].x, Vertices[3].x)));
+
+        var maxZ = Math.Max(Vertices[0].z, Math.Max(Vertices[1].z, Math.Max(Vertices[2].z, Vertices[3].z)));
+        var minZ = Math.Min(Vertices[0].z, Math.Min(Vertices[1].z, Math.Min(Vertices[2].z, Vertices[3].z)));
+
+        while (_crimeScene.m_defaultAdvices.Count() < _crimeScene.m_numberAdvices) {
+
+            
+            Vector3 average = new Vector3(
+                UnityEngine.Random.Range(minX, maxX),
+                 _crimeScene.m_floorPoint.y,
+                UnityEngine.Random.Range(minZ, maxZ));
+
+            if (_crimeScene.triangleList[0].PointInTriangle(average) || _crimeScene.triangleList[1].PointInTriangle(average))
+            {
+                _crimeScene.m_defaultAdvices.Add(average);
+            }
         }
     }
 
