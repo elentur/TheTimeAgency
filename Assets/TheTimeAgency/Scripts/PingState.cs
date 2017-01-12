@@ -4,7 +4,6 @@ using System.Linq;
 using Assets.TheTimeAgency.Scripts.KDTree;
 using UnityEngine;
 using Object = UnityEngine.Object;
-using Random = UnityEngine.Random;
 
 namespace Assets.TheTimeAgency.Scripts
 {
@@ -18,7 +17,7 @@ namespace Assets.TheTimeAgency.Scripts
         /// </summary>
         private const float SENSITIVITY = 0.02f;
 
-        private const float DISTANCE = 0.5f;
+        private const float DISTANCE = 0.1f;
 
         private bool m_ping = false, m_show = false, m_reset = false;
 
@@ -30,9 +29,7 @@ namespace Assets.TheTimeAgency.Scripts
 
         private GameObject pingBox;
 
-        private readonly List<Camera> camList;
 
-        private List<KeyValuePair<string, TimeSpan>> debugTime;
 
         public PingState(CrimeScene crimeScenePattern)
         {
@@ -40,8 +37,6 @@ namespace Assets.TheTimeAgency.Scripts
             _advicesList = new List<GameObject>();
             _pointDic = new SortedDictionary<float, List<Vector3>>();
             cam = Camera.main;
-            debugTime = new List<KeyValuePair<string, TimeSpan>>();
-            camList = new List<Camera>();
         }
 
         public void StartState()
@@ -49,26 +44,18 @@ namespace Assets.TheTimeAgency.Scripts
             pingBox = new GameObject("pingBox");
             pingBox.transform.SetParent(_crimeScene.m_AdvicePlaceHolder.transform.parent.gameObject.transform, false);
 
-            Color color = Color.red; 
+            SetDefaultAdvices();
+        }
 
-            foreach (var vec in _crimeScene.m_defaultAdvices) {
+        private void SetDefaultAdvices()
+        {
+            Color color = Color.red;
+
+            foreach (var vec in _crimeScene.m_defaultAdvices)
+            {
                 GameObject advice = AddCube("advice_" + vec.x + "/" + vec.y + "/" + vec.z, vec, color, new Vector3(10, 10, 10));
                 _advicesList.Add(advice);
             }
-        }
-
-        private bool IsNotInOlderDirectionOfSight(Vector3 point)
-        {
-            foreach (var myCam in camList)
-            {
-                Vector3 myYiewportPoint = myCam.WorldToViewportPoint(point);
-                if ((myYiewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(myYiewportPoint) && myYiewportPoint.z < myCam.farClipPlane))
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         private bool InfiniteCameraCanSeePoint(Vector3 point)
@@ -76,62 +63,6 @@ namespace Assets.TheTimeAgency.Scripts
             Vector3 viewportPoint = cam.WorldToViewportPoint(point);
             return (viewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint) && viewportPoint.z < cam.farClipPlane);
         }
-
-        private void PointCloudPointsInCameraView()
-        {
-            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-
-            // Begin timing.
-            stopwatch.Start();
-
-            Debug.Log("Points: " + _crimeScene.m_pointCloud.m_points.Count());
-            foreach (Vector3 point in _crimeScene.m_pointCloud.m_points)
-            {
-                if (point.y <= 1.0f + _crimeScene.m_floorPoint.y)
-                {
-                    if (_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point))
-                    {
-                        if (InfiniteCameraCanSeePoint(point) && IsNotInOlderDirectionOfSight(point))
-                        {
-                            // Group similar points into buckets based on sensitivity. 
-                            float roundedY = Mathf.Round(point.y / SENSITIVITY) * SENSITIVITY;
-
-                            if (!_pointDic.ContainsKey(roundedY))
-                            {
-                                _pointDic.Add(roundedY, new List<Vector3>());
-                            }
-
-                            if (!_pointDic[roundedY].Contains(point))
-                            {
-                                _pointDic[roundedY].Add(point);
-                            }
-
-                           // SetCube(point,Color.red);
-                        }
-                    }
-                }
-            }
-
-            /*if (!camList.Contains(cam))
-            {
-                var cameraGameObject = new GameObject(cam.name);
-                var copyCam = cameraGameObject.AddComponent<Camera>();
-                copyCam.enabled = false;
-                copyCam.CopyFrom(cam);
-
-                camList.Add(copyCam);
-            }*/
-
-            Debug.Log(string.Format("point dic : {0}", _pointDic.Count));
-
-            stopwatch.Stop();
-
-            // Write result.
-            //debugTime.Add(new KeyValuePair<string, TimeSpan>("PointCloudPointsICameraView", stopwatch.Elapsed));
-            Debug.Log(string.Format("Time elapsed for PointCloudPointsICameraView: {0}", stopwatch.Elapsed)); ;
-        }
-
-        private SortedDictionary<float, List<Vector3>> leftOver = new SortedDictionary<float, List<Vector3>>();
 
         public void UpdateState()
         {
@@ -145,7 +76,6 @@ namespace Assets.TheTimeAgency.Scripts
             if (m_reset)
             {
                 _pointDic.Clear();
-                camList.Clear();
                 _advicesList.Clear();
                 foreach (Transform child in pingBox.transform)
                 {
@@ -164,233 +94,95 @@ namespace Assets.TheTimeAgency.Scripts
                 // Begin timing.
                 stopwatch.Start();
 
-                List<Vector3> pointList = new List<Vector3>();
-                
-                foreach (var point in _crimeScene.m_pointCloud.m_points)
-                {
+                List<Vector3> pointList = GenerateCrimeScenePointList();
 
-
-                    if ((_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point)) && InfiniteCameraCanSeePoint(point))
-                    {
-                        pointList.Add(point);
-                    }
-                }
                 KDTree<Vector3> pTree = CreateVector2KDTree(pointList);
-                Debug.Log(pTree.Size);
-                foreach (var advices in _advicesList)
-                {
 
-             
-                    if (/*!advices.activeSelf &&*/  InfiniteCameraCanSeePoint(advices.transform.position))
-                    {
-                        var pIter = pTree.NearestNeighbors(new double[] { advices.transform.position.x, advices.transform.position.z }, 1, 0.1);
-                      
-                        pIter.MoveNext();
-                        Debug.Log("current: " + pIter.Current);
-                        AndroidHelper.ShowAndroidToastMessage(string.Format("Neue Koordinate {0}", pIter.Current), AndroidHelper.ToastLength.SHORT);
-                        if (pIter.Current != Vector3.zero)
-                        {
-                            advices.transform.position = pIter.Current;
-                         //   advices.SetActive(true);
-                        }
-
-                    }
-                }
-
-                /*
-                PointCloudPointsInCameraView();
-
-                var oldAdvices = 0;
-
-                foreach (var dic in _pointDic.Reverse())
-                {
-                    var y = dic.Key;
-                    var pointList = _pointDic[y];
-                    int oldCount = Int32.MaxValue;
-
-                    //Debug.Log("my y: " + y);
-                    Debug.Log("pointList: " + pointList.Count);
-
-                    while (pointList.Count > 0 && pointList.Count != oldCount)
-                    {
-                        oldCount = pointList.Count;
-
-                        KDTree<Vector3> pTree = CreateVector2KDTree(pointList);
-
-                        var r = Random.Range(0, pointList.Count - 1);
-
-                        var pIter = pTree.NearestNeighbors(new double[] { pointList[r].x, pointList[r].z }, pointList.Count, DISTANCE);
-                        // We must remove at least one point to ensure that we count down pointList and do not get off the first time
-                        pointList.Remove(pointList[r]);
-
-                        int counter = 0;
-                        int numOnLine = 0;
-
-                        List<Vector3> deltedPoints = new List<Vector3>();
-
-                        Color color = Random.ColorHSV();
-
-                        Vector3 average = CalcAverageOfArea(pIter, ref counter, ref numOnLine, ref deltedPoints, color);
-
-                        if (counter < 80 || numOnLine * 1.0f / counter * 100.0f >= 80) continue;
-
-                        bool outOfReach = !InReachToOutherAdvices(average, DISTANCE);
-
-                        if (!outOfReach) continue;
-
-                        pointList = pointList.Except(deltedPoints).ToList();
-
-                       GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average,
-                            color, new Vector3(10, 10, 10));
-
-                        _advicesList.Add(advice);
-                    }
-
-                    //Debug.Log("advices: " + (_advicesList.Count - oldAdvices));
-
-                    //foreach (var advice in _advicesList)
-                    {
-                        //Debug.Log("advice: " + advice.transform.position);
-                    }
-
-                    oldAdvices = _advicesList.Count;
-                }
-
-                leftOver = new SortedDictionary<float, List<Vector3>>(_pointDic); 
-
-                _pointDic.Clear();*/
+                SetAdvices(pTree,pointList);
 
                 stopwatch.Stop();
-
-                // Write result.
-                // debugTime.Add(new KeyValuePair<string, TimeSpan>("AdaptAdvicePlaceHolders", stopwatch.Elapsed));
-                //ShowDebugTime();
                 Debug.Log(string.Format("Time: {0}", stopwatch.Elapsed));
             }
         }
 
-        private void ShowDebugTime()
+        private List<Vector3> GenerateCrimeScenePointList()
         {
+            List<Vector3> pointList = new List<Vector3>();
 
-            foreach (var time in debugTime)
+            foreach (var point in _crimeScene.m_pointCloud.m_points)
             {
-                Debug.Log(string.Format("Time elapsed for {0}: {1}", time.Key, time.Value));
+                if ((_crimeScene.triangleList[0].PointInTriangle(point) || _crimeScene.triangleList[1].PointInTriangle(point)) && InfiniteCameraCanSeePoint(point))
+                {
+                    pointList.Add(point);
+                }
             }
 
+            return pointList;
         }
 
-        private Vector3 CalcAverageOfArea(NearestNeighbour<Vector3> pIter, ref int counter, ref int numOnLine, ref List<Vector3> deletedPoints, Color color)
+        private void SetAdvices(KDTree<Vector3> pTree, List<Vector3> pointList)
         {
-            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-
-            // Begin timing.
-            stopwatch.Start();
-
-            Vector3 sum = Vector3.zero;
-            Vector3 a = Vector3.zero;
-            Vector3 b = Vector3.zero;
-
-            while (pIter.MoveNext())
+            foreach (var advice in _advicesList)
             {
-                var point = pIter.Current;
 
-                deletedPoints.Add(point);
 
-                sum += point;
-
-                counter++;
-
-                if (a == Vector3.zero) a = point;
-                else if (b == Vector3.zero)
+                if (!advice.activeSelf && InfiniteCameraCanSeePoint(advice.transform.position))
                 {
-                    b = point;
-                    numOnLine++;
-                }
-                else if (PointInLine2D(a, b, point))
-                {
-                    numOnLine++;
-                }
+                    var pIter = pTree.NearestNeighbors(new double[] { advice.transform.position.x, advice.transform.position.z }, pointList.Count, DISTANCE);
 
-                //SetCube(point, color, 0.2f);
+                    var counter = 0;
+                    var sum = Vector3.zero;
+                    var y = float.MinValue;
+
+                    while (pIter.MoveNext())
+                    {
+                        if (pIter.Current != Vector3.zero)
+                        {
+                            var point = pIter.Current;
+                            if (Math.Abs(y - float.MinValue) < 0.01) y = point.y;
+
+                            if (Math.Abs(y - point.y) <= SENSITIVITY)
+                            {
+                                sum += point;
+                                counter++;
+                            }
+
+                        }
+                    }
+
+                    AndroidHelper.ShowAndroidToastMessage(string.Format("Neue Koordinate {0}", pIter.Current), AndroidHelper.ToastLength.SHORT);
+
+                    advice.transform.position = sum / counter;
+                    advice.SetActive(true);
+
+                }
             }
-
-            stopwatch.Stop();
-
-            // Write result.
-           // debugTime.Add(new KeyValuePair<string, TimeSpan>("CalcAverageOfArea", stopwatch.Elapsed));
-            //Debug.Log(string.Format("Time elapsed for CalcAverageOfArea: {0}", stopwatch.Elapsed));
-
-            return sum / counter;
         }
 
         private KDTree<Vector3> CreateVector2KDTree(List<Vector3> pointList)
         {
-            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-
-            // Begin timing.
-            stopwatch.Start();
-
-            var kdTree = new KDTree<Vector3>(2);
-
+            var kdTree = new KDTree<Vector3>(2); 
             foreach (var point in pointList)
             {
                 kdTree.AddPoint(new double[] { point.x, point.z }, point);
             }
-
-            stopwatch.Stop();
-
-            // Write result.
-            //debugTime.Add(new KeyValuePair<string, TimeSpan>("CreateVector2KDTree", stopwatch.Elapsed));
-            // Debug.Log(string.Format("Time elapsed for CreateVector2KDTree: {0}", stopwatch.Elapsed));
-
             return kdTree;
-        }
-
-        private bool InReachToOutherAdvices(Vector3 point, float minDist)
-        {
-            bool inReach = false;
-            foreach (var oldAdvice in _advicesList)
-            {
-                float dist = Vector3.Distance(oldAdvice.transform.position, point);
-                if (dist <= minDist)
-                {
-                    inReach = true;
-                }
-            }
-
-            return inReach;
-        }
-
-        private static bool PointInLine2D(Vector3 p, Vector3 a, Vector3 b, float t = 0.001f)
-        {
-            float zero = (b.x - a.x) * (p.z - a.z) - (p.x - a.x) * (b.z - a.z);
-            return Math.Abs(zero) < t;
         }
 
         private void ShowAllInactiveCubes()
         {
 
-            Color color = Color.red;
+            Color color = Color.gray;
 
-            Color colorUsed = Color.yellow;
-
-            foreach (var pointList in leftOver.Values)
+            foreach (var advice in _advicesList)
             {
-                foreach (var point in pointList)
+                if (!advice.activeSelf)
                 {
-                    SetCube(point, color);
+                    var vec = advice.transform.position;
+                    GameObject placeholder = AddCube("advice_" + vec.x + "/" + vec.y + "/" + vec.z, vec, color, new Vector3(10, 10, 10));
+                    placeholder.SetActive(true);
                 }
             }
-        }
-
-        private void SetCube(Vector3 point, Color color, float scale = 0)
-        {
-            GameObject sphere = Object.Instantiate<GameObject>(_crimeScene.m_advice);
-            sphere.transform.SetParent(pingBox.transform, false);
-            sphere.transform.position = point;
-            sphere.transform.localScale = new Vector3(1 + scale, 1 + scale, 1 + scale);
-            sphere.GetComponent<Renderer>().material.color = color;
-            sphere.SetActive(true);
         }
 
         public void OnGUIState()
@@ -411,8 +203,8 @@ namespace Assets.TheTimeAgency.Scripts
             {
                 if (GUI.Button(new Rect(Screen.width - 220, Screen.height - 100, 200, 80), "<size=30>Show</size>")) m_show = true;
             }
-
-            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), string.Format("<size=30> {0} / {1} Aadvices added!</size>", _advicesList.Count, _crimeScene.m_numberAdvices));
+ 
+            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), string.Format("<size=30> {0} / {1} Aadvices added!</size>", _advicesList.Count(n => n.activeSelf), _crimeScene.m_numberAdvices));
         }
 
         private GameObject AddCube(string name, Vector3 position, Color color, Vector3 scale)
@@ -437,7 +229,7 @@ namespace Assets.TheTimeAgency.Scripts
 
             cubeCopy.GetComponent<Renderer>().material.color = color;
 
-            cubeCopy.SetActive(true);
+            cubeCopy.SetActive(false);
 
             // Debug.Log(string.Format("Cube {0} set on {1}", cubeCopy.name, cubeCopy.transform.position));
 
