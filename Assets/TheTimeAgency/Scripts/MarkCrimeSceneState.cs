@@ -67,7 +67,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
         m_setMarker = false;
 
-        bool tooClose = vec3ToClose(position);
+        bool tooClose = Vec3ToClose(position);
 
         bool isInside = false;
 
@@ -160,16 +160,13 @@ public class MarkCrimeSceneState : ICrimeSceneState
 
         if (Vertices.Count >= _crimeScene.m_numberMarkers)
         {
-            AndroidHelper.ShowAndroidToastMessage(string.Format("Congratulations!!!!! All makers set!"));
             m_setMarker = false;
             _crimeScene.m_marker.SetActive(false);
             ToPingState();
             return;
         }
-        else
-        {
-            //AndroidHelper.ShowAndroidToastMessage(string.Format("{0} / {1}  makers set!", Vertices.Count, _crimeScene.m_numberMarkers));
-        }
+       
+        AndroidHelper.ShowAndroidToastMessage(string.Format("{0} / {1}  makers set!", Vertices.Count, _crimeScene.m_numberMarkers));
     }
 
     private void ToPingState()
@@ -179,7 +176,7 @@ public class MarkCrimeSceneState : ICrimeSceneState
         _crimeScene.currentState.StartState();
     }
 
-    private bool vec3ToClose(Vector3 target)
+    private bool Vec3ToClose(Vector3 target)
     {
         bool toClose = false;
 

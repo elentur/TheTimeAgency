@@ -127,8 +127,6 @@ namespace Assets.TheTimeAgency.Scripts
                 }
 
                 SetRandomAdvices();
-
-                
             }
             else if (m_ping)
             {
@@ -222,6 +220,7 @@ namespace Assets.TheTimeAgency.Scripts
                     var vec = advice.transform.position;
                     GameObject placeholder = AddCube("advice_" + vec.x + "/" + vec.y + "/" + vec.z, vec, color, new Vector3(10, 10, 10));
                     placeholder.SetActive(true);
+                    // TODO delte placeholder if we find a advice from scene!
                 }
             }
         }

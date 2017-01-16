@@ -11,6 +11,8 @@ public class FindFloorState : ICrimeSceneState
     /// </summary>
     private bool m_findingFloor = false;
 
+    private bool camaraIsAccessible = false;
+
     public FindFloorState(CrimeScene crimeScenePattern)
     {
         crimeScene = crimeScenePattern;
@@ -18,7 +20,8 @@ public class FindFloorState : ICrimeSceneState
 
     public void StartState()
     {
-        //throw new System.NotImplementedException();
+        // TODO check if the Tango Camera is accessible
+        camaraIsAccessible = true;
     }
 
     public void UpdateState()
@@ -39,7 +42,7 @@ public class FindFloorState : ICrimeSceneState
     {
         if (!m_findingFloor)
         {
-            if (true)
+            if (camaraIsAccessible)
             {
                 if (crimeScene.m_pointCloud == null)
                 {
