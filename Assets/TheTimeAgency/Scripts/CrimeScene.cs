@@ -33,21 +33,6 @@ using UnityEngine;
 public class CrimeScene : MonoBehaviour
 {
     /// <summary>
-    /// The marker for the found floor.
-    /// </summary>
-    public GameObject m_marker;
-
-    /// <summary>
-    /// The placeholder for the found floor.
-    /// </summary>
-    public GameObject m_AdvicePlaceHolder;
-
-    /// <summary>
-    /// The cube for the found floor.
-    /// </summary>
-    public GameObject m_advice;
-
-    /// <summary>
     /// The scene's Tango application.
     /// </summary>
     [HideInInspector]
@@ -68,11 +53,10 @@ public class CrimeScene : MonoBehaviour
     [HideInInspector]
     public TangoPointCloudFloor m_pointCloudFloor;
 
-    /// <summary>
-    /// If <c>true</c>, floor finding is in progress.
-    /// </summary>
-    private bool m_findingFloor = false;
 
+    /**
+     * States  Declaration
+     */
     [HideInInspector]
     public ICrimeSceneState currentState;
     [HideInInspector]
@@ -81,31 +65,40 @@ public class CrimeScene : MonoBehaviour
     public MarkCrimeSceneState markCrimeSceneState;
     [HideInInspector]
     public PingState pingState;
+    [HideInInspector]
+    public DefaultState defaultState;
 
+
+    /**
+     * Untiy Values
+     */
+    public GameObject m_markerCanvas;
+    public GameObject m_pingCanvas;
+
+    public GameObject m_marker;
+    public int m_numberMarkers = 4;
+    public float m_distanceMarkers = 1.0f;
+    public GameObject m_AdvicePlaceHolder;
+    public GameObject m_advice;
+    public int m_numberAdvices = 8;
+    public float m_distanceAdvices = 0.1f;
+
+
+    /**
+     * Locale Variables
+     */ 
     [HideInInspector]
     public List<Triangle2D> triangleList = new List<Triangle2D>();
 
     [HideInInspector]
-    public List<GameObject> m_AdvicePlaceHolderList = new List<GameObject>();
-
-    public int m_numberMarkers;
-
-    public float m_distanceMarkers;
-
-    public int m_numberAdvices = 8;
-
     public Vector3 m_floorPoint;
-
-    public GameObject makersBox;
-
-    [HideInInspector]
-    public List<Vector3> m_defaultAdvices = new List<Vector3>();
 
     private void Awake()
     {
         findFloorState = new FindFloorState(this);
         markCrimeSceneState = new MarkCrimeSceneState(this);
         pingState = new PingState(this);
+        defaultState = new DefaultState(this);
     }
 
     /// <summary>
@@ -116,6 +109,9 @@ public class CrimeScene : MonoBehaviour
         m_pointCloud = FindObjectOfType<TangoPointCloud>();
         m_pointCloudFloor = FindObjectOfType<TangoPointCloudFloor>();
         m_tangoApplication = FindObjectOfType<TangoApplication>();
+
+        m_markerCanvas.SetActive(false);
+        m_pingCanvas.SetActive(false);
 
         m_marker.SetActive(false);
         m_AdvicePlaceHolder.SetActive(false);
@@ -160,5 +156,41 @@ public class CrimeScene : MonoBehaviour
             Application.LoadLevel(Application.loadedLevel);
 #pragma warning restore 618
         }
+    }
+
+    public void Button_SetMarker()
+    {
+        Debug.Log("Button_SetMarker");
+        markCrimeSceneState.m_setMarker = true;
+    }
+
+    public void Button_DefaultMarker()
+    {
+        Debug.Log("Button_DefaultMarker");
+        markCrimeSceneState.m_defaultMarkers = true;
+    }
+
+    public void Button_ResetMarker()
+    {
+        Debug.Log("Button_ResetMarker");
+        markCrimeSceneState.m_resetMarkers = true;
+    }
+
+    public void Button_PingAdvices()
+    {
+        Debug.Log("Button_PingAdvices");
+        pingState.m_ping = true;
+    }
+
+    public void Button_ShowAdvices()
+    {
+        Debug.Log("Button_ShowAdvices");
+        pingState.m_show = true;
+    }
+
+    public void Button_ResetAdvices()
+    {
+        Debug.Log("Button_ResetAdvices");
+        pingState.m_reset = true;
     }
 }

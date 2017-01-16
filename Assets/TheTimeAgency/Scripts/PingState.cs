@@ -19,49 +19,93 @@ namespace Assets.TheTimeAgency.Scripts
 
         private const float DISTANCE = 0.1f;
 
-        private bool m_ping = false, m_show = false, m_reset = false;
+        public bool m_ping = false, m_show = false, m_reset = false;
 
         private readonly List<GameObject> _advicesList;
 
-        private readonly SortedDictionary<float, List<Vector3>> _pointDic;
+        private readonly Camera _cam;
 
-        private Camera cam;
-
-        private GameObject pingBox;
-
-
+        private GameObject _pingBox;
 
         public PingState(CrimeScene crimeScenePattern)
         {
             _crimeScene = crimeScenePattern;
             _advicesList = new List<GameObject>();
-            _pointDic = new SortedDictionary<float, List<Vector3>>();
-            cam = Camera.main;
+            _cam = Camera.main;
         }
 
         public void StartState()
         {
-            pingBox = new GameObject("pingBox");
-            pingBox.transform.SetParent(_crimeScene.m_AdvicePlaceHolder.transform.parent.gameObject.transform, false);
+            _pingBox = new GameObject("pingBox");
+            _pingBox.transform.SetParent(_crimeScene.m_AdvicePlaceHolder.transform.parent.gameObject.transform, false);
+            SetRandomAdvices();
 
-            SetDefaultAdvices();
+            _crimeScene.m_pingCanvas.SetActive(true);
         }
 
-        private void SetDefaultAdvices()
+        private void SetRandomAdvices()
         {
+
+            List<Vector3> Vertices = new List<Vector3>();
+
+            Vertices = _crimeScene.triangleList[0].GetVertices().ToList()
+                .Concat(_crimeScene.triangleList[1].GetVertices().ToList()).ToList();
+
+            var maxX = Math.Max(Vertices[0].x, Math.Max(Vertices[1].x, Math.Max(Vertices[2].x, Vertices[3].x)));
+            var minX = Math.Min(Vertices[0].x, Math.Min(Vertices[1].x, Math.Min(Vertices[2].x, Vertices[3].x)));
+
+            var maxZ = Math.Max(Vertices[0].z, Math.Max(Vertices[1].z, Math.Max(Vertices[2].z, Vertices[3].z)));
+            var minZ = Math.Min(Vertices[0].z, Math.Min(Vertices[1].z, Math.Min(Vertices[2].z, Vertices[3].z)));
+
             Color color = Color.red;
 
-            foreach (var vec in _crimeScene.m_defaultAdvices)
+            int counter = 0;
+
+            while (_advicesList.Count() < _crimeScene.m_numberAdvices)
             {
-                GameObject advice = AddCube("advice_" + vec.x + "/" + vec.y + "/" + vec.z, vec, color, new Vector3(10, 10, 10));
-                _advicesList.Add(advice);
+                // TODO warum läuft diese Schleife ins leere ohne counter???????
+                if (counter > 10000) break;
+
+                counter++;
+
+                Vector3 average = new Vector3(
+                    UnityEngine.Random.Range(minX, maxX),
+                     _crimeScene.m_floorPoint.y,
+                    UnityEngine.Random.Range(minZ, maxZ));
+
+                if (!vec3ToClose(average) && (_crimeScene.triangleList[0].PointInTriangle(average) || _crimeScene.triangleList[1].PointInTriangle(average)))
+                {
+                    GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average, color, new Vector3(10, 10, 10));
+                    advice.SetActive(false);
+                    _advicesList.Add(advice);
+                }
             }
+        }
+
+        private bool vec3ToClose(Vector3 target)
+        {
+            bool toClose = false;
+
+            foreach (GameObject advices in _advicesList)
+            {
+                float distSqr = Vector3.SqrMagnitude(
+                    new Vector2(advices.transform.position.x, advices.transform.position.z) - new Vector2(target.x, target.z)
+                );
+
+                if (distSqr < _crimeScene.m_distanceAdvices * _crimeScene.m_distanceAdvices)
+                {
+                    toClose = true;
+                    break;
+                }
+            }
+
+            return toClose;
         }
 
         private bool InfiniteCameraCanSeePoint(Vector3 point)
         {
-            Vector3 viewportPoint = cam.WorldToViewportPoint(point);
-            return (viewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint) && viewportPoint.z < cam.farClipPlane);
+            Vector3 viewportPoint = _cam.WorldToViewportPoint(point);
+            return (viewportPoint.z > 0 && (new Rect(0, 0, 1, 1)).Contains(viewportPoint) && viewportPoint.z < _cam.farClipPlane);
         }
 
         public void UpdateState()
@@ -69,33 +113,32 @@ namespace Assets.TheTimeAgency.Scripts
 
             if (m_show)
             {
-                ShowAllInactiveCubes();
                 m_show = false;
+                ShowAllInactiveCubes(); 
             }
-
-            if (m_reset)
+            else if (m_reset)
             {
-                _pointDic.Clear();
+
+                m_reset = false;
                 _advicesList.Clear();
-                foreach (Transform child in pingBox.transform)
+                foreach (Transform child in _pingBox.transform)
                 {
                     Object.Destroy(child.gameObject);
                 }
 
-                m_reset = false;
-            }
+                SetRandomAdvices();
 
-            if (m_ping)
+                
+            }
+            else if (m_ping)
             {
                 m_ping = false;
 
                 System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-
-                // Begin timing.
                 stopwatch.Start();
 
                 List<Vector3> pointList = GenerateCrimeScenePointList();
-
+           
                 KDTree<Vector3> pTree = CreateVector2KDTree(pointList);
 
                 SetAdvices(pTree,pointList);
@@ -124,13 +167,11 @@ namespace Assets.TheTimeAgency.Scripts
         {
             foreach (var advice in _advicesList)
             {
-
-
                 if (!advice.activeSelf && InfiniteCameraCanSeePoint(advice.transform.position))
                 {
                     var pIter = pTree.NearestNeighbors(new double[] { advice.transform.position.x, advice.transform.position.z }, pointList.Count, DISTANCE);
 
-                    var counter = 0;
+                    var counter = 1;
                     var sum = Vector3.zero;
                     var y = float.MinValue;
 
@@ -139,8 +180,10 @@ namespace Assets.TheTimeAgency.Scripts
                         if (pIter.Current != Vector3.zero)
                         {
                             var point = pIter.Current;
-                            if (Math.Abs(y - float.MinValue) < 0.01) y = point.y;
 
+                            // get the higthest y onley one time
+                            if (Math.Abs(y - float.MinValue) < 0.01) y = point.y;
+                            // do we are in the same higth
                             if (Math.Abs(y - point.y) <= SENSITIVITY)
                             {
                                 sum += point;
@@ -150,11 +193,8 @@ namespace Assets.TheTimeAgency.Scripts
                         }
                     }
 
-                    AndroidHelper.ShowAndroidToastMessage(string.Format("Neue Koordinate {0}", pIter.Current), AndroidHelper.ToastLength.SHORT);
-
                     advice.transform.position = sum / counter;
                     advice.SetActive(true);
-
                 }
             }
         }
@@ -164,7 +204,8 @@ namespace Assets.TheTimeAgency.Scripts
             var kdTree = new KDTree<Vector3>(2); 
             foreach (var point in pointList)
             {
-                kdTree.AddPoint(new double[] { point.x, point.z }, point);
+                if(point != Vector3.zero)
+                    kdTree.AddPoint(new double[] { point.x, point.z }, point);
             }
             return kdTree;
         }
@@ -187,24 +228,13 @@ namespace Assets.TheTimeAgency.Scripts
 
         public void OnGUIState()
         {
-            GUI.color = Color.white;
 
-            if (!m_reset)
+            if (_advicesList.Count(n => n.activeSelf) >= _crimeScene.m_numberAdvices)
             {
-                if (GUI.Button(new Rect(Screen.width - 220, 100, 200, 80), "<size=30>Reset</size>")) m_reset = true;
+                ToDefaultState();
             }
 
-            if (!m_ping)
-            {
-                if (GUI.Button(new Rect(Screen.width - 220, 20, 200, 80), "<size=30>Ping</size>")) m_ping = true;
-            }
-
-            if (!m_show)
-            {
-                if (GUI.Button(new Rect(Screen.width - 220, Screen.height - 100, 200, 80), "<size=30>Show</size>")) m_show = true;
-            }
- 
-            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), string.Format("<size=30> {0} / {1} Aadvices added!</size>", _advicesList.Count(n => n.activeSelf), _crimeScene.m_numberAdvices));
+            GUI.Label(new Rect(0, Screen.height - 50, Screen.width, 50), string.Format("<size=30> {0} / {1} Aadvices added!</size>", _advicesList.Count(n => n.activeSelf), _advicesList.Count()));
         }
 
         private GameObject AddCube(string name, Vector3 position, Color color, Vector3 scale)
@@ -216,7 +246,7 @@ namespace Assets.TheTimeAgency.Scripts
 
             //http://answers.unity3d.com/questions/868484/why-is-instantiated-objects-scale-changing.html
             //Sets "m_marker Parent" as the new parent of the myMarker GameObject, except this makes the myMarker keep its local orientation rather than its global orientation.
-            cubeCopy.transform.SetParent(pingBox.transform, false);
+            cubeCopy.transform.SetParent(_pingBox.transform, false);
             // Place the marker at the center of the screen at the found floor height.
 
             // adding a Colider for ping state
@@ -234,6 +264,13 @@ namespace Assets.TheTimeAgency.Scripts
             // Debug.Log(string.Format("Cube {0} set on {1}", cubeCopy.name, cubeCopy.transform.position));
 
             return cubeCopy;
+        }
+
+        private void ToDefaultState()
+        {
+            _crimeScene.m_pingCanvas.SetActive(false);
+            _crimeScene.currentState = _crimeScene.defaultState;
+            _crimeScene.currentState.StartState();
         }
     }
 }
