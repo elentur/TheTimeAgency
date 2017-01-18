@@ -2,11 +2,9 @@
 
 namespace Assets.TheTimeAgency.Scripts
 {
-    public class AdvicePlaceHolder : MonoBehaviour
+    public class AdvicePlaceHolder
     {
-        public bool Checked = false;
-        public float Heigth;
-        public bool Adapted = false;
+        public int Importance;
     }
 
 }

@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using Assets.TheTimeAgency.Scripts;
 using Tango;
 using UnityEngine;
+using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 /// <summary>
 /// Tango floor finding user interface controller. 
@@ -80,12 +82,11 @@ public class CrimeScene : MonoBehaviour
     public float m_distanceMarkers = 1.0f;
     public GameObject m_AdvicePlaceHolder;
     public GameObject m_advice;
-    public int m_numberAdvices = 8;
+    public int m_numberAdvices = 11;
     public float m_distanceAdvices = 0.1f;
 
-
     /**
-     * Locale Variables
+     * Global Variables
      */ 
     [HideInInspector]
     public List<Triangle2D> triangleList = new List<Triangle2D>();
@@ -93,12 +94,30 @@ public class CrimeScene : MonoBehaviour
     [HideInInspector]
     public Vector3 m_floorPoint;
 
+    [HideInInspector]
+    public List<GameObject> _adviceList;
+
     private void Awake()
     {
         findFloorState = new FindFloorState(this);
         markCrimeSceneState = new MarkCrimeSceneState(this);
         pingState = new PingState(this);
         defaultState = new DefaultState(this);
+        CreatAdvices();
+    }
+
+    private void CreatAdvices()
+    {
+        for (int i = 0; i < m_numberAdvices; i++)
+        {
+            GameObject cube = Object.Instantiate<GameObject>(m_advice);
+            cube.name = "Advice-" + i;
+            cube.SetActive(false);
+            BoxCollider bc = (BoxCollider)cube.gameObject.AddComponent(typeof(BoxCollider));
+            bc.center = Vector3.zero;
+            cube.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
+            _adviceList.Add(cube);
+        }
     }
 
     /// <summary>
@@ -116,6 +135,9 @@ public class CrimeScene : MonoBehaviour
         m_marker.SetActive(false);
         m_AdvicePlaceHolder.SetActive(false);
         m_advice.SetActive(false);
+
+        //AdviceCreater ac = new AdviceCreater(m_numberAdvices, m_AdvicePlaceHolder);
+        //AdviceList = ac.fillAdviceList();
 
         currentState = findFloorState;
         currentState.StartState();
@@ -179,18 +201,18 @@ public class CrimeScene : MonoBehaviour
     public void Button_PingAdvices()
     {
         Debug.Log("Button_PingAdvices");
-        pingState.m_ping = true;
+        pingState.Ping = true;
     }
 
     public void Button_ShowAdvices()
     {
         Debug.Log("Button_ShowAdvices");
-        pingState.m_show = true;
+        pingState.Show = true;
     }
 
     public void Button_ResetAdvices()
     {
         Debug.Log("Button_ResetAdvices");
-        pingState.m_reset = true;
+        pingState.Reset = true;
     }
 }

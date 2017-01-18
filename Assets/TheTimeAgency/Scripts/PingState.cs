@@ -19,7 +19,7 @@ namespace Assets.TheTimeAgency.Scripts
 
         private const float DISTANCE = 0.1f;
 
-        public bool m_ping = false, m_show = false, m_reset = false;
+        public bool Ping = false, Show = false, Reset = false;
 
         private readonly List<GameObject> _advicesList;
 
@@ -30,7 +30,7 @@ namespace Assets.TheTimeAgency.Scripts
         public PingState(CrimeScene crimeScenePattern)
         {
             _crimeScene = crimeScenePattern;
-            _advicesList = new List<GameObject>();
+            _advicesList = crimeScenePattern._adviceList;
             _cam = Camera.main;
         }
 
@@ -46,6 +46,16 @@ namespace Assets.TheTimeAgency.Scripts
         private void SetRandomAdvices()
         {
 
+            Debug.Log("_advicesList: " + _advicesList.Count);
+
+            foreach (var advice in _advicesList)
+            {
+                advice.transform.position = GetRandomPostion();
+            }
+        }
+
+        private Vector3 GetRandomPostion()
+        {
             List<Vector3> Vertices = new List<Vector3>();
 
             Vertices = _crimeScene.triangleList[0].GetVertices().ToList()
@@ -57,29 +67,31 @@ namespace Assets.TheTimeAgency.Scripts
             var maxZ = Math.Max(Vertices[0].z, Math.Max(Vertices[1].z, Math.Max(Vertices[2].z, Vertices[3].z)));
             var minZ = Math.Min(Vertices[0].z, Math.Min(Vertices[1].z, Math.Min(Vertices[2].z, Vertices[3].z)));
 
-            Color color = Color.red;
-
             int counter = 0;
 
-            while (_advicesList.Count() < _crimeScene.m_numberAdvices)
+            Vector3 randomVector = Vector3.zero;
+
+            bool founded = false;
+
+            while (!founded)
             {
                 // TODO warum läuft diese Schleife ins leere ohne counter???????
                 if (counter > 10000) break;
 
                 counter++;
 
-                Vector3 average = new Vector3(
+                randomVector = new Vector3(
                     UnityEngine.Random.Range(minX, maxX),
                      _crimeScene.m_floorPoint.y,
                     UnityEngine.Random.Range(minZ, maxZ));
 
-                if (!vec3ToClose(average) && (_crimeScene.triangleList[0].PointInTriangle(average) || _crimeScene.triangleList[1].PointInTriangle(average)))
+                if (!vec3ToClose(randomVector) && (_crimeScene.triangleList[0].PointInTriangle(randomVector) || _crimeScene.triangleList[1].PointInTriangle(randomVector)))
                 {
-                    GameObject advice = AddCube("advice_" + average.x + "/" + average.y + "/" + average.z, average, color, new Vector3(10, 10, 10));
-                    advice.SetActive(false);
-                    _advicesList.Add(advice);
+                    founded = true;
                 }
             }
+            Debug.Log("radom: " + randomVector);
+            return randomVector;
         }
 
         private bool vec3ToClose(Vector3 target)
@@ -111,15 +123,15 @@ namespace Assets.TheTimeAgency.Scripts
         public void UpdateState()
         {
 
-            if (m_show)
+            if (Show)
             {
-                m_show = false;
-                ShowAllInactiveCubes(); 
+                Show = false;
+                ShowAllInactiveCubes();
             }
-            else if (m_reset)
+            else if (Reset)
             {
 
-                m_reset = false;
+                Reset = false;
                 _advicesList.Clear();
                 foreach (Transform child in _pingBox.transform)
                 {
@@ -128,18 +140,18 @@ namespace Assets.TheTimeAgency.Scripts
 
                 SetRandomAdvices();
             }
-            else if (m_ping)
+            else if (Ping)
             {
-                m_ping = false;
+                Ping = false;
 
                 System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
                 stopwatch.Start();
 
                 List<Vector3> pointList = GenerateCrimeScenePointList();
-           
+
                 KDTree<Vector3> pTree = CreateVector2KDTree(pointList);
 
-                SetAdvices(pTree,pointList);
+                SetAdvices(pTree, pointList);
 
                 stopwatch.Stop();
                 Debug.Log(string.Format("Time: {0}", stopwatch.Elapsed));
@@ -199,10 +211,10 @@ namespace Assets.TheTimeAgency.Scripts
 
         private KDTree<Vector3> CreateVector2KDTree(List<Vector3> pointList)
         {
-            var kdTree = new KDTree<Vector3>(2); 
+            var kdTree = new KDTree<Vector3>(2);
             foreach (var point in pointList)
             {
-                if(point != Vector3.zero)
+                if (point != Vector3.zero)
                     kdTree.AddPoint(new double[] { point.x, point.z }, point);
             }
             return kdTree;
