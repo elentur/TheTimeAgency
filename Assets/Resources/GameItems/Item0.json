@@ -1,0 +1,28 @@
+﻿{
+  "name": "Glas1",
+  "time": [ 0, 1, 2 ],
+  "src": "Glas",
+  "fingerprint": [
+    {
+      "name": "Fingerabdruck1",
+      "time": [ 1, 2 ],
+      "person": "Paul"
+    }
+  ],
+  "chemical": [
+    {
+      "name": "Alkohol",
+      "time": [ 0, 1, 2 ],
+      "test": "Keine verdächtigen Inhaltstoffe"
+    }
+  ],
+  "biological": [
+    {
+      "name": "DNA Spuren",
+      "time": [ 1, 2 ],
+      "person": "Paul",
+      "test": "DNA kann Paul zugeordnet werden"
+    }
+  ]
+
+}

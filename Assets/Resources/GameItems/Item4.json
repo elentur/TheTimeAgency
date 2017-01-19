@@ -1,0 +1,23 @@
+﻿{
+  "name": "Karten",
+  "time": [ 0, 1, 2 ],
+  "src": "Cards",
+  "fingerprint": [
+    {
+      "name": "Fingerabdruck1",
+      "time": [ 0, 1, 2 ],
+      "person": "Paul"
+    },{
+      "name": "Fingerabdruck2",
+      "time": [ 1, 2 ],
+      "person": "Stefan"
+    },{
+      "name": "Fingerabdruck3",
+      "time": [  1, 2 ],
+      "person": "Bernd"
+    }
+  ],
+  "chemical": [],
+  "biological": []
+
+}

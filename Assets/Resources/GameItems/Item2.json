@@ -1,0 +1,21 @@
+﻿{
+  "name": "Zigarettenschachtel",
+  "time": [ 0, 1, 2 ],
+  "src": "ZigarettPack",
+  "fingerprint": [
+    {
+      "name": "Fingerabdruck1",
+      "time": [ 0, 1, 2 ],
+      "person": "Paul"
+    }
+  ],
+  "chemical": [
+    {
+      "name": "Merkwürdiger Geruch an Zigaretten",
+      "time": [ 0, 1, 2 ],
+      "test": "Gift: In Hoher Dosis sofort tödlich, in geringer Dosis führt es zu extremen Haluzinationen.",
+      "person": "Paul"
+    }
+  ],
+  "biological": [ ]
+}

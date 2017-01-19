@@ -1,0 +1,15 @@
+﻿{
+  "name": "Pistole",
+  "time": [ 2 ],
+  "src": "Pistol",
+  "fingerprint": [
+    {
+      "name": "Fingerabdruck1",
+      "time": [ 2 ],
+      "person": "Stefan"
+    }
+  ],
+  "chemical": [],
+  "biological": []
+
+}

@@ -1,0 +1,23 @@
+﻿{
+  "name": "Angefangene Zigarette",
+  "time": [ ],
+  "src": "Zigarett",
+  "fingerprint": [],
+  "chemical": [
+    {
+      "name": "Gift",
+      "time": [ 0, 1, 2 ],
+      "test": "Gift: In Hoher Dosis sofort tödlich, in geringer Dosis führt es zu extremen Haluzinationen.",
+	  "person": "Paul"
+    }
+  ],
+  "biological": [
+    {
+      "name": "DNA Spuren",
+      "time": [ 0, 1, 2 ],
+      "person": "Stefan",
+      "test": "DNA kann Stefan zugeordnet werden"
+    }
+  ]
+
+}

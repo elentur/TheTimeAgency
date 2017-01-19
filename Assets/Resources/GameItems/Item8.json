@@ -1,0 +1,15 @@
+﻿{
+  "name": "Feuerzeug",
+  "time": [ 0, 1, 2 ],
+  "src": "Lighter",
+  "fingerprint": [
+    {
+      "name": "Fingerabdruck1",
+      "time": [ 0, 1, 2 ],
+      "person": "Paul"
+    }
+  ],
+  "chemical": [],
+  "biological": []
+
+}

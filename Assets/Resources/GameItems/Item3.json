@@ -1,0 +1,16 @@
+﻿{
+  "name": "Blutlache",
+  "time": [ 2 ],
+  "src": "Blood",
+  "fingerprint": [],
+  "chemical": [],
+  "biological": [
+    {
+      "name": "DNA1",
+      "time": [ 2 ],
+      "person": "Paul",
+      "test": "DNA kann Paul zugeordnet werden"
+    }
+  ]
+
+}

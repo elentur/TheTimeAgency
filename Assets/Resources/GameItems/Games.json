@@ -1,0 +1,21 @@
+﻿{
+  "gameAttributes": [
+    {
+      "name" : "Spiel1",
+      "items" : [ "Item0", "Item1", "Item2", "Item3", "Item4", "Item5", "Item6", "Item7", "Item8", "Item9", "Item10" ],
+      "persons": [ "Person0", "Person1", "Person2" ],
+      "time": [ "22:15", "22:20", "22:25" ],
+      "solutions": [
+        {
+          "offenders": [ "Paul" ],
+          "victims": [ "Bernd", "Stefan" ]
+        },
+        {
+          "offenders": [ "Paul" ,"Stefan" ],
+          "victims": [ "Bernd" , "Stefan" ]
+        }
+      ]
+    }
+  ]
+
+}

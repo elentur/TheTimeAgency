@@ -1,0 +1,22 @@
+﻿{
+  "name": "Aschenbecher",
+  "time": [ 0, 1, 2 ],
+  "src": "Ashtray",
+  "fingerprint": [
+    {
+      "name": "Fingerabdruck1",
+      "time": [  1, 2 ],
+      "person": "Paul"
+    }
+  ],
+  "chemical": [
+    {
+      "name": "Gift",
+      "time": [ 0, 1, 2 ],
+      "test": "Gift: In Hoher Dosis sofort tödlich, in geringer Dosis führt es zu extremen Haluzinationen.",
+	  "person": "Paul"
+    }
+  ],
+  "biological": []
+
+}

@@ -1,0 +1,15 @@
+﻿{
+  "name": "Patronenhülse",
+  "time": [ 2 ],
+  "src": "Capsule",
+  "fingerprint": [
+    {
+      "name": "Fingerabdruck1",
+      "time": [0,1, 2 ],
+      "person": "Stefan"
+    }
+  ],
+  "chemical": [],
+  "biological": []
+
+}
