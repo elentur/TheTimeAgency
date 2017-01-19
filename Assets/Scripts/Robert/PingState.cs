@@ -194,18 +194,16 @@ namespace Assets.TheTimeAgency.Scripts
                 if (InfiniteCameraCanSeePoint(position))
                 {
                     var pIter = pTree.NearestNeighbors(new double[] { position.x,position.z }, pointList.Count, DISTANCE);
-
+                    pIter.MoveNext();
                     var counter = 1;
-                    var sum = Vector3.zero;
-                    var y = float.MinValue;
+                    var sum = pIter.Current;
+                    var y = sum.y;
 
                     while (pIter.MoveNext())
                     {
                         var point = pIter.Current;
                         if (point != Vector3.zero)
                         {
-                            // get the higthest y onley one time
-                            if (Math.Abs(y - float.MinValue) < 0.01) y = point.y;
                             // do we are in the same higth
                             if (Math.Abs(y - point.y) <= SENSITIVITY)
                             {
@@ -216,6 +214,8 @@ namespace Assets.TheTimeAgency.Scripts
                         }
                     }
                     randmPositions.Remove(position);
+                    if (sum == Vector3.zero) sum = position;
+
                     foundPositions.Add(sum / counter);
                 }
             }
