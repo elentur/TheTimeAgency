@@ -121,8 +121,6 @@
     <Compile Include="Assets\Scripts\StartGame.cs" />
     <Compile Include="Assets\Scripts\SuspectScript.cs" />
     <Compile Include="Assets\Scripts\TiltWindow.cs" />
-    <Compile Include="Assets\Scripts\VolumetricLight.cs" />
-    <Compile Include="Assets\Scripts\VolumetricLightRenderer.cs" />
     <Compile Include="Assets\Scripts\WheatleyScript.cs" />
     <Compile Include="Assets\Scripts\items\ClickScript.cs" />
     <Compile Include="Assets\TangoPrefabs\Scripts\ARCameraPostProcess.cs" />

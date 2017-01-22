@@ -2,6 +2,7 @@
   "name": "Aschenbecher",
   "time": [ 0, 1, 2 ],
   "src": "Ashtray",
+  "priority":  "up",
   "fingerprint": [
     {
       "name": "Fingerabdruck1",

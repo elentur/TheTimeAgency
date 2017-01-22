@@ -79,8 +79,6 @@ public class CrimeScene : MonoBehaviour
     public GameObject m_marker;
     public int m_numberMarkers = 4;
     public float m_distanceMarkers = 1.0f;
-    public GameObject m_AdvicePlaceHolder;
-    public GameObject m_advice;
     public float m_distanceAdvices = 0.1f;
 
     /**
@@ -111,9 +109,6 @@ public class CrimeScene : MonoBehaviour
         m_tangoApplication = FindObjectOfType<TangoApplication>();
 
         m_marker.SetActive(false);
-        m_AdvicePlaceHolder.SetActive(false);
-        m_advice.SetActive(false);
-
         currentState = findFloorState;
         currentState.StartState();
     }
@@ -130,6 +125,8 @@ public class CrimeScene : MonoBehaviour
 
         currentState.UpdateState();
     }
+
+   
 
     /// <summary>
     /// OnGUI is called for rendering and handling GUI events.

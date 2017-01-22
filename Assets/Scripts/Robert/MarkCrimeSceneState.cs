@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using Assets.TheTimeAgency.Scripts;
 using Object = UnityEngine.Object;
+using System.Collections;
 
 public class MarkCrimeSceneState : ICrimeSceneState
 {
@@ -97,18 +98,22 @@ public class MarkCrimeSceneState : ICrimeSceneState
         }
 
        GameObject myMarker = AddMarker(position);
-        if (Vertices.Count > 0)
-        {
-            createMesh(myMarker, markers[markers.Count - 1]);
 
-        }
-       markers.Add(myMarker);
+
+        /*  if (Vertices.Count > 0)
+          {
+
+              _crimeScene.StartCoroutine(createMesh(myMarker, markers[markers.Count - 1]));
+
+          }
+
+
+          if (Vertices.Count >= 4)
+          {
+              _crimeScene.StartCoroutine(createMesh(markers[0], myMarker));
+          }*/
+        markers.Add(myMarker);
         Vertices.Add(position);
-        if (Vertices.Count >= 4)
-        {
-            createMesh(markers[0], myMarker);
-        }
-       
 
         if (!_crimeScene.triangleList.Any() && Vertices.Count > 2)
         {
@@ -147,10 +152,13 @@ public class MarkCrimeSceneState : ICrimeSceneState
        
         myMarker.SetActive(true);
         myMarker.GetComponent<Animator>().enabled = true;
+      
         return myMarker;
     }
     void createMesh(GameObject instance, GameObject lastInstance)
     {
+
+      //  yield return new WaitForSeconds(2.4f);
         Mesh m = new Mesh();
         m.name = "ScriptedMesh";
         Transform tra = lastInstance.transform;
@@ -195,15 +203,71 @@ public class MarkCrimeSceneState : ICrimeSceneState
     void ICrimeSceneState.OnGUIState()
     {
 
-        if (Vertices.Count >= _crimeScene.m_numberMarkers)
+        if (Vertices.Count >= _crimeScene.m_numberMarkers )
         {
+
+            _crimeScene.StartCoroutine(creatBarriers());
+
             m_setMarker = false;
             _crimeScene.m_marker.SetActive(false);
+
             ToPingState();
+
             return;
         }
        
         AndroidHelper.ShowAndroidToastMessage(string.Format("{0} / {1}  makers set!", Vertices.Count, _crimeScene.m_numberMarkers));
+    }
+
+    private IEnumerator creatBarriers()
+    {
+        yield return new WaitForSeconds(2.4f);
+
+        List<Vector3> orderdVecs = new List<Vector3>();
+        foreach (Vector3 v in _crimeScene.triangleList[0].GetVertices())
+        {
+            if (_crimeScene.triangleList[1].GetVertices().Contains(v)) orderdVecs.Add(v);
+            else orderdVecs.Insert(0, v);
+        }
+        foreach (Vector3 v in _crimeScene.triangleList[1].GetVertices())
+        {
+            if (!orderdVecs.Contains(v))
+            {
+                orderdVecs.Insert(2, v);
+                break;
+            }
+
+        }
+
+
+        for (int i = 0; i < orderdVecs.Count; i++)
+        {
+            
+            GameObject obj1 = null;
+            GameObject obj2 = null;
+            if (i < 3)
+            {
+                foreach (GameObject g in markers)
+                {
+                    if (g.transform.position == orderdVecs[i]) obj1 = g;
+                    if (g.transform.position == orderdVecs[i + 1]) obj2 = g;
+                }
+
+
+                createMesh(obj1, obj2);
+
+            }
+            else
+            {
+                foreach (GameObject g in markers)
+                {
+                    if (g.transform.position == orderdVecs[i]) obj1 = g;
+                    if (g.transform.position == orderdVecs[0]) obj2 = g;
+                }
+                createMesh(obj1, obj2);
+            }
+        }
+
     }
 
     private void ToPingState()

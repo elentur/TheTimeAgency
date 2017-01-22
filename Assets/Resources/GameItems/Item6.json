@@ -2,6 +2,7 @@
   "name": "Zigarettenstummel",
   "time": [ ],
   "src": "EmptyZigarett",
+  "priority":  "",
   "fingerprint": [],
   "chemical": [
     {

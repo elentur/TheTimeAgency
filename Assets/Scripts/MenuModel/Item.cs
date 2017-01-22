@@ -6,6 +6,7 @@ public class Item
 
     public int[] time;
     public string src;
+    public string priority;
     public Evidence[] fingerprint;
     public Evidence[] chemical;
     public Evidence[] biological;

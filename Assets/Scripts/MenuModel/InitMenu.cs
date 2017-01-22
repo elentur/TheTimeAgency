@@ -16,12 +16,13 @@ public class InitMenu : MonoBehaviour
     private GameObject evidences;
     private GameObject evidenceList;
     private GameObject testProgressBar;
-    private GameObject btnAnalyze;
     private GameObject suspectList;
+    private GameObject test;
 
 
     
     private GameObject gameMessage;
+
 
     private RectTransform testProgress;
 
@@ -39,7 +40,7 @@ public class InitMenu : MonoBehaviour
     private GameObject cam;
 
 
-    private Button pingButton;
+ 
 
     private Slider timeSlider;
     public bool needsRefresh = false;
@@ -63,8 +64,7 @@ public class InitMenu : MonoBehaviour
 
             panelManager = gameObject.GetComponent<PanelManager>();
             evidencePanelManager = GameObject.Find("EvidenceManager").GetComponent<PanelManager>();
-
-            pingButton = GameObject.Find("Ping").GetComponent<Button>();
+            
             timeSlider = GameObject.Find("TimeSlider").GetComponent<Slider>();
             timeSlider.onValueChanged.AddListener((a) => slideTime(a));
             timeSliderTitel = GameObject.Find("TimeSliderTitel").GetComponent<Text>();
@@ -73,8 +73,7 @@ public class InitMenu : MonoBehaviour
             gameMessage.SetActive(false);
 
 
-
-            btnAnalyze =  GameObject.Find("BtnAnalyze");
+            test = GameObject.Find("Test");
             testProgressBar = GameObject.Find("TestProgressBar");
             testProgress = GameObject.Find("TestProgressHandle").GetComponent<RectTransform>();
             testProgessTitel = GameObject.Find("TestProgessTitel").GetComponent<Text>();
@@ -102,10 +101,12 @@ public class InitMenu : MonoBehaviour
         Item item = game.getItem(name);
         if (item == null) return;
         GameObject button = (GameObject)Instantiate(Resources.Load(Path.Combine("Prefabs", "Item")), new Vector3(0.0f, -130.0f * itemList.transform.childCount, 0.0f), Quaternion.identity);
+        button.name = "btn_" + item.name;
         button.transform.SetParent(itemList.transform, false);
-        Button b = button.GetComponent<Button>();
+        Toggle b = button.GetComponent<Toggle>();
+        b.group = itemList.GetComponent<ToggleGroup>();
         Item it = item;
-        b.onClick.AddListener(() =>
+        b.onValueChanged.AddListener((a) =>
         {
             if (game.getSelectedItem() == it) game.setSelectedItem(null);
             else
@@ -147,13 +148,14 @@ public class InitMenu : MonoBehaviour
             }
             catch (Exception e)
             {
-                Debug.Log("Fehler beim setzen von " + item.name);
+                Debug.Log("Fehler beim setzen von " + item.name + "\n" + e);
             }
         }
     }
 
     void slideTime(float a)
     {
+        needsRefresh = true;
         game.setTime((int)a);
         timeSliderTitel.text = "Zeit: " + game.getRealTime();
         foreach (GameObject obj in game.getItemGameObjects())
@@ -207,7 +209,10 @@ public class InitMenu : MonoBehaviour
                     }
                 }
             }
+           
         }
+        
+      
     }
 
 
@@ -233,6 +238,7 @@ public class InitMenu : MonoBehaviour
     void Update()
     {
         if (needsRefresh) refresh();
+        if (game.getTestItems().Count == 2 && !game.preTest) test.GetComponent<Analyze>().startAnalyze();
         if (game.testProgress < 0 && game.preTest)
         {
                 InvokeRepeating("test_Items", 0.0f, 0.1f*game.getTestItems().Count);

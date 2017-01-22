@@ -12,12 +12,10 @@ public class DragMe : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHa
     private Dictionary<int, RectTransform> m_DraggingPlanes = new Dictionary<int, RectTransform>();
     private ScrollRect s;
     private bool drag = false;
-    private Camera camera;
     private Vector2 startPos;
 
     void Start()
     {
-        camera = Camera.main;
         s = GetComponentInParent<ScrollRect>();
         
     }

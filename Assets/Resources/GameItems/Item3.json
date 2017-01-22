@@ -2,6 +2,7 @@
   "name": "Blutlache",
   "time": [ 2 ],
   "src": "Blood",
+  "priority":  "down",
   "fingerprint": [],
   "chemical": [],
   "biological": [

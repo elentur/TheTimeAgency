@@ -1,42 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Linq;
+using UnityEngine.UI;
 
 public class ClickScript : MonoBehaviour {
-    Camera camera;
+    Camera cam;
+    GameObject itemList; 
+
     void Start()
     {
-        camera = Camera.main.transform.Find("Camera").GetComponent<Camera>();
+        cam = Camera.main.transform.Find("Camera").GetComponent<Camera>();
+        itemList = GameObject.Find("ItemList");
     }
     void Update()
     {
-        return;
-        if (!Input.GetMouseButton(0))
-            return;
-
-        RaycastHit hit;
-        if (!Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit))
-            return;
-
-        Renderer renderer = hit.collider.GetComponent<Renderer>();
-        MeshCollider meshCollider = hit.collider as MeshCollider;
-        if (renderer == null || renderer.sharedMaterial == null || renderer.sharedMaterial.mainTexture == null || meshCollider == null)
-            return;
-
-        Texture2D tex = (Texture2D)renderer.material.mainTexture;
-        Vector2 pixelUV = hit.textureCoord;
      
-       // Debug.Log((int)(pixelUV.x * renderer.material.mainTexture.width) + "--" + (int)(pixelUV.y * renderer.material.mainTexture.height));
-        Color c1 = tex.GetPixel((int)(pixelUV.x * tex.width), (int)(pixelUV.y * tex.height));
-        Color c2 = tex.GetPixel((int)(pixelUV.x * tex.width+1), (int)(pixelUV.y * tex.height));
-        Color c3 = tex.GetPixel((int)(pixelUV.x * tex.width), (int)(pixelUV.y * tex.height)-1);
-        Color c4 = tex.GetPixel((int)(pixelUV.x * tex.width-1), (int)(pixelUV.y * tex.height));
-        Color c5 = tex.GetPixel((int)(pixelUV.x * tex.width), (int)(pixelUV.y * tex.height+1));
-        Color c = new Color();
-        c.r = (c1.r + c2.r + c3.r + c4.r + c5.r) / 5;
-        c.g = (c1.g + c2.g + c3.g + c4.g + c5.g) / 5;
-        c.b = (c1.b + c2.b + c3.b + c4.b + c5.b) / 5;
-        Debug.Log(c);
     }
     void OnMouseDown()
     {
@@ -51,9 +29,9 @@ public class ClickScript : MonoBehaviour {
         }
         for (int i = 0; i < hit.Length; i++)
         {
-            if (hit[i].collider.gameObject.CompareTag("Fingerprint") && camera.cullingMask == (1 << LayerMask.NameToLayer("Fingerprint"))||
-                hit[i].collider.gameObject.CompareTag("Biological") && camera.cullingMask == (1 << LayerMask.NameToLayer("Biological"))||
-                   hit[i].collider.gameObject.CompareTag("Chemical") && camera.cullingMask == (1 << LayerMask.NameToLayer("Chemical")))
+            if (hit[i].collider.gameObject.CompareTag("Fingerprint") && cam.cullingMask == (1 << LayerMask.NameToLayer("Fingerprint"))||
+                hit[i].collider.gameObject.CompareTag("Biological") && cam.cullingMask == (1 << LayerMask.NameToLayer("Biological"))||
+                   hit[i].collider.gameObject.CompareTag("Chemical") && cam.cullingMask == (1 << LayerMask.NameToLayer("Chemical")))
             {
                 Debug.Log("hit");
 
@@ -82,6 +60,13 @@ public class ClickScript : MonoBehaviour {
                     string name = hit[i].collider.transform.parent.name;
                     Game game = Game.getInstance();
                     Item item = game.getItem(name);
+                    Transform btn = itemList.transform.FindChild("btn_" + item.name);
+                    if(btn != null)
+                    {
+                       Toggle tgl=  btn.GetComponent<Toggle>();
+                        if (tgl != null) tgl.isOn = true;
+                    }
+                    
                     if (hit[i].collider.gameObject.CompareTag("Fingerprint"))
                     {
                         

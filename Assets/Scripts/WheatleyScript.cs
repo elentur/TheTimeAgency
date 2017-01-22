@@ -38,7 +38,7 @@ public class WheatleyScript : MonoBehaviour
         //Up Down Movement on Position;
         if (state == -2)
         {
-            float distance = Vector3.Distance(transform.position, randomPos);
+           
             var targetRotation = Quaternion.LookRotation(Camera.main.transform.position - transform.position);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * speed);
 

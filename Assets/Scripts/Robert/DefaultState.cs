@@ -5,11 +5,11 @@ using Assets.TheTimeAgency.Scripts;
 public class DefaultState : ICrimeSceneState
 {
 
-    private readonly CrimeScene crimeScene;
+
 
     public DefaultState(CrimeScene crimeScenePattern)
     {
-        crimeScene = crimeScenePattern;
+      
     }
 
     public void StartState()

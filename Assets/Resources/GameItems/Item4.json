@@ -2,6 +2,7 @@
   "name": "Karten",
   "time": [ 0, 1, 2 ],
   "src": "Cards",
+  "priority":  "up",
   "fingerprint": [
     {
       "name": "Fingerabdruck1",

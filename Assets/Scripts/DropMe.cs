@@ -12,7 +12,7 @@ public class DropMe : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointe
 	private Color normalColor;
 	public Color highlightColor = Color.yellow;
 
-    private bool lockImage = false;
+
     private GameObject obj;
 
     private  Game game;
@@ -126,7 +126,7 @@ public class DropMe : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointe
             obj.GetComponent<Image>().color = Color.gray;
             obj.GetComponent<ItemContainer>().isLocked = true;
         }
-        var dragMe = originalObj.GetComponent<DragMe>();
+   
 
         ItemContainer container = originalObj.GetComponent<ItemContainer>();
         if (container == null)
@@ -137,7 +137,6 @@ public class DropMe : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointe
     private Evidence GetDropEvidence(PointerEventData data)
     {
         var originalObj = data.pointerDrag;
-        var dragMe = originalObj.GetComponent<DragMe>();
         EvidenceContainer container = originalObj.GetComponent<EvidenceContainer>();
         if (container == null)
             return null;

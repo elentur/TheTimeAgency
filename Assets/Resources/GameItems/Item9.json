@@ -2,6 +2,7 @@
   "name": "Pistole",
   "time": [ 2 ],
   "src": "Pistol",
+  "priority":  "",
   "fingerprint": [
     {
       "name": "Fingerabdruck1",

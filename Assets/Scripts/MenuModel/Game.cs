@@ -139,7 +139,7 @@ public class Game
         //Validates Game Solution 
     public GameStateMessage validate()
     {
-        int numberOfEvidences = 0;
+
         foreach (Person p in persons)
         {
             if (p.isOffender)
@@ -280,13 +280,13 @@ public class Game
                 e1[0].time.Contains(timeValue) && e2[0].time.Contains(timeValue))
             {
                 string not = "nicht";
-                string name = "";
+                string name="";
                 if (e1[0].person == e2[0].person)
                 {
                     not = "";
                     if (e1[0].name.Contains("Fingerabdruck")) name = " Die DNA Spuren reichen für eine Bestimmung: " + e1[0].person; ;
                 }
-                string answer = e2[0].name + " von " + item2.name + " ist " + not + " identisch mit " + e1[0].name + " von " + item1.name + ". ";
+                string answer = e2[0].name + " von " + item2.name + " ist " + not + " identisch mit " + e1[0].name + " von " + item1.name + ". "+name;
 
                 if (!item1.compares.Contains(answer)) item1.compares.Add(answer);
                 if (!item2.compares.Contains(answer)) item2.compares.Add(answer);

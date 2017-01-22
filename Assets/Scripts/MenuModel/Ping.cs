@@ -11,13 +11,16 @@ public class Ping : MonoBehaviour
     private List<GameObject> items = new List<GameObject>();
     private ScreenOverlay overlay;
     private int screenShotCount = 0;
-    private Assets.TheTimeAgency.Scripts.PingState pingState; 
+    private Assets.TheTimeAgency.Scripts.PingState pingState;
+    private CrimeScene crimeScene;
 
     void Start()
     {
         GameObject crimeSceneObject = GameObject.Find("CrimeSceneObject");
-        if(crimeSceneObject != null){
-            pingState= crimeSceneObject.GetComponent<CrimeScene>().pingState;
+        if (crimeSceneObject != null)
+        {
+            crimeScene = crimeSceneObject.GetComponent<CrimeScene>();
+            if (crimeScene != null) pingState = crimeScene.pingState;
         }
 
     }
@@ -54,7 +57,7 @@ public class Ping : MonoBehaviour
             InitMenu init = GameObject.Find("MenuManager").GetComponent<InitMenu>();
             foreach (GameObject item in items)
             {
-             
+
                 GameObject cam = item.transform.Find("Camera").gameObject;
                 Camera camera = cam.GetComponent<Camera>();
                 RenderTexture rt = new RenderTexture(256, 256, 24);
@@ -67,20 +70,20 @@ public class Ping : MonoBehaviour
                 screenShot.Apply();
                 camera.targetTexture = null;
                 camera.enabled = false;
-                RenderTexture.active = null; 
+                RenderTexture.active = null;
                 Destroy(rt);
                 init.addItemButton(item.name, Sprite.Create(screenShot, new Rect(0, 0, screenShot.width, screenShot.height), new Vector2(0, 0)));
-               /* for (int i = 0; i < itemList.transform.childCount; i++)
-                {
-                    GameObject button = itemList.transform.GetChild(i).gameObject;
-                    GameObject image = button.transform.Find("Image").gameObject;
-                    ItemContainer cont = image.GetComponent<ItemContainer>();
-                    if (cont.item.name == item.name)
-                    {
-                        button.SetActive(true);
-                        image.GetComponent<Image>().sprite = Sprite.Create(screenShot, new Rect(0, 0, screenShot.width, screenShot.height), new Vector2(0, 0));
-                    }
-                }*/
+                /* for (int i = 0; i < itemList.transform.childCount; i++)
+                 {
+                     GameObject button = itemList.transform.GetChild(i).gameObject;
+                     GameObject image = button.transform.Find("Image").gameObject;
+                     ItemContainer cont = image.GetComponent<ItemContainer>();
+                     if (cont.item.name == item.name)
+                     {
+                         button.SetActive(true);
+                         image.GetComponent<Image>().sprite = Sprite.Create(screenShot, new Rect(0, 0, screenShot.width, screenShot.height), new Vector2(0, 0));
+                     }
+                 }*/
 
             }
 
@@ -103,33 +106,73 @@ public class Ping : MonoBehaviour
 
         Game game = Game.getInstance();
         List<Vector3> foundPositions = pingState.ping();
+        foundPositions.Sort((a, b) => a.y.CompareTo(b.y));
         foreach (Vector3 position in foundPositions)
         {
-            foreach (GameObject item in game.getItemGameObjects())
+            bool running = true;
+            while (running)
             {
-                if (!item.activeSelf)
+                if (Mathf.Abs(position.y - crimeScene.m_floorPoint.y) < 0.1f)
                 {
-                    item.transform.position = position;
-                    item.SetActive(true);
-                    items.Add(item);
-                    break;
+                    for (int i = 0; i < game.getItemGameObjects().Count; i++)
+                    {
+                        GameObject item = game.getItemGameObjects()[i];
+                        if (!item.activeSelf && game.getItems()[i].priority.Equals("down"))
+                        {
+                            item.transform.position = position;
+                            item.SetActive(true);
+                            items.Add(item);
+                            running = false;
+                            break;
+                        }
+                    }
+                    if (!running) continue;
+                }
+                else if (position.y  <-0.5f)
+                {
+                    for (int i = 0; i < game.getItemGameObjects().Count; i++)
+                    {
+                        GameObject item = game.getItemGameObjects()[i];
+                        if (!item.activeSelf && game.getItems()[i].priority.Equals("up"))
+                        {
+                            item.transform.position = position;
+                            item.SetActive(true);
+                            items.Add(item);
+                            running = false;
+                            break;
+                        }
+                    }
+                    if (!running) continue;
+                }
+
+                foreach (GameObject item in game.getItemGameObjects())
+                {
+    
+                        if (!item.activeSelf)
+                    {
+                        item.transform.position = position;
+                        item.SetActive(true);
+                        items.Add(item);
+                        running = false;
+                        break;
+                    }
                 }
             }
         }
-      /*  foreach (GameObject item in game.getItemGameObjects())
-        {
-            // Renderer r = (Renderer)item.GetComponentInChildren<Renderer>();
-            // if (r.enabled) return;
-            Vector3 screenPoint = Camera.main.WorldToViewportPoint(item.transform.position);
- 
-            if(item.activeSelf)continue;
-            bool onScreen = screenPoint.z > 0 && screenPoint.z < Camera.main.GetComponent<Camera>().farClipPlane && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
-            if (onScreen)
-            {
-                item.SetActive(true);
-                items.Add(item);
-            }
-        }*/
+        /*  foreach (GameObject item in game.getItemGameObjects())
+          {
+              // Renderer r = (Renderer)item.GetComponentInChildren<Renderer>();
+              // if (r.enabled) return;
+              Vector3 screenPoint = Camera.main.WorldToViewportPoint(item.transform.position);
+
+              if(item.activeSelf)continue;
+              bool onScreen = screenPoint.z > 0 && screenPoint.z < Camera.main.GetComponent<Camera>().farClipPlane && screenPoint.x > 0 && screenPoint.x < 1 && screenPoint.y > 0 && screenPoint.y < 1;
+              if (onScreen)
+              {
+                  item.SetActive(true);
+                  items.Add(item);
+              }
+          }*/
     }
 
 }

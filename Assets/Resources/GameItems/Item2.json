@@ -2,6 +2,7 @@
   "name": "Zigarettenschachtel",
   "time": [ 0, 1, 2 ],
   "src": "ZigarettPack",
+  "priority":  "",
   "fingerprint": [
     {
       "name": "Fingerabdruck1",

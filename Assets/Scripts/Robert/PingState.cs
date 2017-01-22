@@ -24,8 +24,7 @@ namespace Assets.TheTimeAgency.Scripts
         private readonly List<GameObject> _advicesList;
 
         private readonly Camera _cam;
-
-        private GameObject _pingBox;
+        
 
         private List<Vector3> randmPositions;
         private bool[,] checker;
@@ -54,8 +53,7 @@ namespace Assets.TheTimeAgency.Scripts
              minZ = Math.Min(Vertices[0].z, Math.Min(Vertices[1].z, Math.Min(Vertices[2].z, Vertices[3].z)));
 
             randmPositions = new List<Vector3>();
-            _pingBox = new GameObject("pingBox");
-            _pingBox.transform.SetParent(_crimeScene.m_AdvicePlaceHolder.transform.parent.gameObject.transform, false);
+           
             SetRandomAdvices();
             GameObject barrierInterface = GameObject.Find("MainInterface");
             if (barrierInterface != null)
@@ -71,7 +69,7 @@ namespace Assets.TheTimeAgency.Scripts
             Game game = Game.getInstance();
             int numItems = game.getItems().Count();
             int minSize = (int)Math.Sqrt(numItems)+1;
-            float minDistance = 0.15f;
+            float minDistance = 0.50f;
             int w = (int)(Math.Abs(maxX - minX)/minDistance);
             if (w < minSize) w = minSize;
             int h = (int)(Math.Abs(maxZ - minZ) / minDistance);
@@ -234,7 +232,7 @@ namespace Assets.TheTimeAgency.Scripts
             return kdTree;
         }
 
-        private void ShowAllInactiveCubes()
+     /*   private void ShowAllInactiveCubes()
         {
 
             Color color = Color.gray;
@@ -249,14 +247,14 @@ namespace Assets.TheTimeAgency.Scripts
                     // TODO delte placeholder if we find a advice from scene!
                 }
             }
-        }
+        }*/
 
         public void OnGUIState()
         {   
 
              }
 
-        private GameObject AddCube(string name, Vector3 position, Color color, Vector3 scale)
+      /*  private GameObject AddCube(string name, Vector3 position, Color color, Vector3 scale)
         {
             // copy of the maker
             GameObject cubeCopy = Object.Instantiate<GameObject>(_crimeScene.m_advice);
@@ -283,7 +281,7 @@ namespace Assets.TheTimeAgency.Scripts
             // Debug.Log(string.Format("Cube {0} set on {1}", cubeCopy.name, cubeCopy.transform.position));
 
             return cubeCopy;
-        }
+        }*/
 
         private void ToDefaultState()
         {

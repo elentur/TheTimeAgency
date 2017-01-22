@@ -2,6 +2,7 @@
   "name": "Feuerzeug",
   "time": [ 0, 1, 2 ],
   "src": "Lighter",
+  "priority":  "",
   "fingerprint": [
     {
       "name": "Fingerabdruck1",

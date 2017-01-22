@@ -2,6 +2,7 @@
   "name": "Patronenhülse",
   "time": [ 2 ],
   "src": "Capsule",
+  "priority":  "down",
   "fingerprint": [
     {
       "name": "Fingerabdruck1",
